@@ -1,4 +1,4 @@
-function tokenizer(input: string) {
+export default function tokenizer(input: string) {
   const output = input.replace(/'/, "");
   return output.toLowerCase().match(/[a-zA-Z]+/g) || [];
 }

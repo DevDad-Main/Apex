@@ -143,6 +143,6 @@ const STOP_WORDS = new Set([
 ]);
 //#endregion
 
-function removeStopWords(tokens: string[]): string[] {
+export default function removeStopWords(tokens: string[]): string[] {
   return tokens.filter((token) => !STOP_WORDS.has(token));
 }
