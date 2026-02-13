@@ -1,19 +1,35 @@
-/*
-Stop words are common words that appear frequently but don't carry meaningful search value:
-- "the", "a", "an" - articles
-- "is", "are", "was" - common verbs
-- "and", "or", "but" - conjunctions
-- "in", "on", "at", "to" - prepositions
-- "it", "this", "that" - pronouns
-Why filter them?
-- They bloat the index without helping search quality
-- Searching for "the" would match almost every document
-- Reduces storage and improves performance
+/**
+ * @fileoverview Stop words filtering for the search engine.
+ * 
+ * Stop words are common words that appear frequently in natural language but carry
+ * little to no semantic meaning for search purposes. Examples include articles,
+ * prepositions, pronouns, and common verbs.
+ * 
+ * Why filter stop words?
+ * - Reduces index size (fewer terms to store)
+ * - Improves search quality (avoids matching every document)
+ * - Increases performance (smaller dataset to search)
+ * 
+ * @module textProcessor/stopWords
+ */
 
-*/
-
-//#region Stop Words
-const STOP_WORDS = new Set([
+/**
+ * A Set containing common English stop words that should be filtered out
+ * during text processing.
+ * 
+ * Categories included:
+ * - Articles: a, an, the
+ * - Prepositions: in, on, at, to, from, for
+ * - Pronouns: it, he, she, they, you, we
+ * - Common verbs: is, are, was, were, be, have, do, will
+ * - Conjunctions: and, or, but, if
+ * - Other common words: the, that, this, those, these
+ * 
+ * @example
+ * STOP_WORDS.has("the");  // true
+ * STOP_WORDS.has("python"); // false
+ */
+export const STOP_WORDS = new Set([
   "a",
   "about",
   "above",
