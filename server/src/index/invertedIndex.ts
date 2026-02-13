@@ -1,17 +1,17 @@
 /**
  * @fileoverview Inverted Index implementation for the search engine.
- * 
+ *
  * The inverted index is the core data structure used by search engines.
  * Unlike a forward index (document -> words), an inverted index maps
  * words to the documents containing them, enabling fast O(1) lookups.
- * 
+ *
  * Key Concepts:
  * - TF (Term Frequency): How many times a term appears in a document
  * - DF (Document Frequency): In how many documents does a term appear
- * 
+ *
  * Index Structure:
  * Map<term, { docIds: Set<docId>, tf: Map<docId, count>, df: number }>
- * 
+ *
  * @module index/invertedIndex
  */
 
@@ -21,7 +21,7 @@ import { sampleDocs } from "./sampleDocs";
 
 /**
  * Represents a document in the search system.
- * 
+ *
  * @interface Document
  * @property {string} id - Unique identifier for the document
  * @property {string} content - The main text content to be indexed and searched
@@ -35,7 +35,7 @@ interface Document {
 
 /**
  * Represents a search result returned from a query.
- * 
+ *
  * @interface SearchResult
  * @property {string} documentId - The ID of the matching document
  * @property {number} score - Relevance score (higher = more relevant)
@@ -49,7 +49,7 @@ interface SearchResult {
 
 /**
  * An entry in the inverted index for a single term.
- * 
+ *
  * @interface IndexEntry
  * @property {Set<string>} docIds - Set of document IDs containing this term
  * @property {Map<string, number>} tf - Term frequency map: docId -> count
@@ -63,12 +63,12 @@ interface IndexEntry {
 
 /**
  * InvertedIndex - A search index data structure for fast full-text search.
- * 
+ *
  * This class implements an inverted index, which maps each unique term
  * to the documents containing it, along with term frequency information.
- * 
+ *
  * @class InvertedIndex
- * 
+ *
  * @example
  * const index = new InvertedIndex();
  * index.addDocument({ id: "1", title: "Python Guide", content: "Python is great" });
@@ -77,12 +77,12 @@ interface IndexEntry {
 class InvertedIndex {
   /**
    * The main inverted index data structure.
-   * 
+   *
    * Maps each unique term to an IndexEntry containing:
    * - docIds: Set of document IDs that contain this term
    * - tf: Map of document ID to term frequency (count in that document)
    * - df: Document frequency (how many documents contain this term)
-   * 
+   *
    * @private
    * @type {Map<string, IndexEntry>}
    */
@@ -91,7 +91,7 @@ class InvertedIndex {
   /**
    * Stores the original documents by their ID.
    * Used for retrieving full document content from search results.
-   * 
+   *
    * @private
    * @type {Map<string, Document>}
    */
@@ -99,7 +99,7 @@ class InvertedIndex {
 
   /**
    * Total number of documents currently indexed.
-   * 
+   *
    * @private
    * @type {number}
    */
@@ -107,7 +107,7 @@ class InvertedIndex {
 
   /**
    * Creates a new empty InvertedIndex.
-   * 
+   *
    * @constructor
    */
   constructor() {
@@ -117,8 +117,18 @@ class InvertedIndex {
   }
 
   /**
+   * Retrieves a document by its ID.
+   *
+   * @param docId - The unique identifier of the document
+   * @returns The Document if found, undefined otherwise
+   */
+  getDocument(docId: string): Document | undefined {
+    return this.documents.get(docId);
+  }
+
+  /**
    * Adds a document to the inverted index.
-   * 
+   *
    * Processing steps:
    * 1. Combine title and content into a single text string
    * 2. Tokenize the text (split into individual words)
@@ -126,10 +136,10 @@ class InvertedIndex {
    * 4. Count term frequencies within this document
    * 5. Update the inverted index with term-document mappings
    * 6. Store the original document for later retrieval
-   * 
+   *
    * @param {Document} doc - The document to add to the index
    * @returns {void}
-   * 
+   *
    * @example
    * index.addDocument({
    *   id: "1",
@@ -140,7 +150,7 @@ class InvertedIndex {
   addDocument(doc: Document): void {
     // Step 1: Combine title and content (title provides additional context)
     const fullText = doc.title ? `${doc.title} ${doc.content}` : doc.content;
-    
+
     // Step 2 & 3: Tokenize and remove stop words
     const tokens = removeStopWords(tokenizer(fullText));
 
@@ -182,16 +192,16 @@ class InvertedIndex {
 
   /**
    * Searches the index for documents matching the query.
-   * 
+   *
    * Search algorithm:
    * 1. Tokenize the query (same pipeline as documents)
    * 2. For each query term, look up matching documents in the index
    * 3. Accumulate term frequencies (TF) across all matched terms
    * 4. Sort results by score (descending)
-   * 
+   *
    * @param {string} query - The search query string
    * @returns {SearchResult[]} Array of matching documents sorted by relevance
-   * 
+   *
    * @example
    * const results = index.search("python javascript");
    * // Returns: [{ documentId: "2", score: 3, termFrequency: 3 }, ...]
@@ -221,8 +231,8 @@ class InvertedIndex {
       for (const [docId, termFreq] of entry.tf) {
         const existing = docScores.get(docId) || { tf: 0, matches: 0 };
 
-        existing.tf += termFreq;   // Sum of term frequencies
-        existing.matches += 1;     // Count of query terms matched
+        existing.tf += termFreq; // Sum of term frequencies
+        existing.matches += 1; // Count of query terms matched
 
         docScores.set(docId, existing);
       }
@@ -233,7 +243,7 @@ class InvertedIndex {
     for (const [docId, data] of docScores) {
       results.push({
         documentId: docId,
-        score: data.tf,           // Total term frequency as relevance score
+        score: data.tf, // Total term frequency as relevance score
         termFrequency: data.tf,
       });
     }
