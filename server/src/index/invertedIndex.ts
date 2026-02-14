@@ -276,18 +276,20 @@ class InvertedIndex {
   // getDocumentFrequency(term: string): number;
 }
 
-async function main() {
-  const index = new InvertedIndex();
+export const invertedIndex = new InvertedIndex();
 
-  // Add sample docs
-  sampleDocs.forEach((doc) => index.addDocument(doc));
-
-  // Scrape and index a url
-  await index.scrapeAndIndex("https://en.wikipedia.org/wiki/Javascript");
-
-  // Search
-  const results = index.search("javascript");
-  console.log(results);
-}
-
-main();
+// async function main() {
+//   const index = new InvertedIndex();
+//
+//   // Add sample docs
+//   sampleDocs.forEach((doc) => index.addDocument(doc));
+//
+//   // Scrape and index a url
+//   await index.scrapeAndIndex("https://en.wikipedia.org/wiki/Javascript");
+//
+//   // Search
+//   const results = index.search("javascript");
+//   console.log(results);
+// }
+//
+// main();
