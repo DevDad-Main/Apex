@@ -33,7 +33,7 @@ function parseDocument(html: string, url: string): ScrapedDocument {
   const $ = cheerio.load(html);
 
   // Remove unwanted elements
-  $("script, style, nax, header, footer, aside, .ad, .advertisement").remove();
+  $("script, style, nav, header, footer, aside, .ad, .advertisement").remove();
 
   // Extract Title
   const title =

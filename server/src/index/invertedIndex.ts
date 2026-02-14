@@ -15,6 +15,9 @@
  * @module index/invertedIndex
  */
 
+import { log } from "console";
+import { loadDocuments, saveDocuments } from "../scraper/persistence";
+import { scrapeUrl } from "../scraper/scraper";
 import removeStopWords from "../textProcessor/stopWords";
 import tokenizer from "../textProcessor/tokenizer";
 import { sampleDocs } from "./sampleDocs";
@@ -254,17 +257,37 @@ class InvertedIndex {
     return results;
   }
 
+  async scrapeAndIndex(url: string): Promise<void> {
+    const doc = await scrapeUrl(url);
+    this.addDocument({
+      id: doc.id,
+      title: doc.title,
+      content: doc.content,
+    });
+
+    const docs = loadDocuments();
+    docs.push(doc);
+    saveDocuments(docs);
+  }
+
   // // Optional helpers
   // getDocument(docId: string): Document | undefined;
   // getTermFrequency(term: string, docId: string): number;
   // getDocumentFrequency(term: string): number;
 }
 
-// Test the index
-const index = new InvertedIndex();
+async function main() {
+  const index = new InvertedIndex();
 
-sampleDocs.forEach((doc) => index.addDocument(doc));
+  // Add sample docs
+  sampleDocs.forEach((doc) => index.addDocument(doc));
 
-const results = index.search("javascript");
+  // Scrape and index a url
+  await index.scrapeAndIndex("https://en.wikipedia.org/wiki/Javascript");
 
-console.log(results);
+  // Search
+  const results = index.search("javascript");
+  console.log(results);
+}
+
+main();
