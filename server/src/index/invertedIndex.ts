@@ -257,6 +257,10 @@ class InvertedIndex {
     return results;
   }
 
+  getAllDocuments(): Map<string, Document> {
+    return this.documents;
+  }
+
   async scrapeAndIndex(url: string): Promise<void> {
     const doc = await scrapeUrl(url);
     this.addDocument({

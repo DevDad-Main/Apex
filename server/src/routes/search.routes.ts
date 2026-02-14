@@ -9,7 +9,7 @@ import { Router } from "express";
 
 const searchRouter = Router();
 
-searchRouter.get(
+searchRouter.post(
   "/",
   catchAsync(async (req, res, next) => {
     const { query } = req.query;
