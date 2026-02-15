@@ -1,4 +1,4 @@
-import { invertedIndex } from "@/index/invertedIndex.js";
+import { invertedIndex } from "../index/invertedIndex.js";
 import {
   catchAsync,
   logger,
@@ -9,7 +9,7 @@ import { Router } from "express";
 
 const searchRouter = Router();
 
-searchRouter.post(
+searchRouter.get(
   "/",
   catchAsync(async (req, res, next) => {
     const { query } = req.query;
@@ -31,9 +31,9 @@ searchRouter.post(
       res,
       results,
       "Successfully found searches for query",
-      200,
+      200
     );
-  }),
+  })
 );
 
 export default searchRouter;

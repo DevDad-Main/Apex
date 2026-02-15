@@ -1,4 +1,4 @@
-import { invertedIndex } from "@/index/invertedIndex.js";
+import { invertedIndex } from "../index/invertedIndex.js";
 import {
   catchAsync,
   logger,

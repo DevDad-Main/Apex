@@ -4,18 +4,45 @@ import SearchInput from './SearchInput';
 import QuickActions from './QuickActions';
 import SearchFooter from './SearchFooter';
 import SearchResults from './SearchResults';
+import api, { Document, SearchResult } from '../lib/api';
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [documents, setDocuments] = useState<Map<string, Document>>(new Map());
+  const [loading, setLoading] = useState(false);
 
-  const handleSearch = (query: string) => {
+  const handleSearch = async (query: string) => {
     setSearchQuery(query);
-    setShowResults(true);
+    setLoading(true);
+    
+    try {
+      const results = await api.search(query);
+      setSearchResults(results);
+      
+      if (results.length > 0) {
+        const docsMap = new Map<string, Document>();
+        for (const result of results) {
+          try {
+            const doc = await api.getDocument(result.documentId);
+            docsMap.set(result.documentId, doc);
+          } catch (err) {
+            console.error('Failed to fetch document:', result.documentId);
+          }
+        }
+        setDocuments(docsMap);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+      setShowResults(true);
+    }
   };
 
   const handleLuckyClick = () => {
-    // Simulate "I'm Feeling Lucky" - go to first result
     const luckyQueries = [
       'amazing travel destinations',
       'innovative technology trends',
@@ -30,10 +57,20 @@ function Home() {
   const handleBack = () => {
     setShowResults(false);
     setSearchQuery(null);
+    setSearchResults([]);
+    setDocuments(new Map());
   };
 
   if (showResults && searchQuery) {
-    return <SearchResults initialQuery={searchQuery} onBack={handleBack} />;
+    return (
+      <SearchResults 
+        initialQuery={searchQuery} 
+        onBack={handleBack}
+        results={searchResults}
+        documents={documents}
+        loading={loading}
+      />
+    );
   }
 
   return (

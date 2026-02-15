@@ -16,22 +16,24 @@
  */
 
 import { log } from "console";
-import { loadDocuments, saveDocuments } from "../scraper/persistence";
-import { scrapeUrl } from "../scraper/scraper";
-import removeStopWords from "../textProcessor/stopWords";
-import tokenizer from "../textProcessor/tokenizer";
-import { sampleDocs } from "./sampleDocs";
+import { loadDocuments, saveDocuments } from "../scraper/persistence.js";
+import { scrapeUrl } from "../scraper/scraper.js";
+import removeStopWords from "../textProcessor/stopWords.js";
+import tokenizer from "../textProcessor/tokenizer.js";
+import { sampleDocs } from "./sampleDocs.js";
 
 /**
  * Represents a document in the search system.
  *
  * @interface Document
  * @property {string} id - Unique identifier for the document
+ * @property {string} url - The source URL of the document
  * @property {string} content - The main text content to be indexed and searched
  * @property {string} [title] - Optional title for additional context
  */
 interface Document {
   id: string;
+  url: string;
   content: string;
   title?: string;
 }
@@ -265,6 +267,7 @@ class InvertedIndex {
     const doc = await scrapeUrl(url);
     this.addDocument({
       id: doc.id,
+      url: doc.url,
       title: doc.title,
       content: doc.content,
     });

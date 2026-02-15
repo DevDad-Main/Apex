@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { invertedIndex } from "@/index/invertedIndex.js";
+import { invertedIndex } from "../index/invertedIndex.js";
 import { catchAsync, sendError, sendSuccess } from "devdad-express-utils";
 
 const documentsRouter = Router();

@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search } from 'lucide-react';
+import api from '../lib/api';
 
 interface SearchInputProps {
   onSearch: (query: string) => void;
@@ -9,19 +10,46 @@ interface SearchInputProps {
 export default function SearchInput({ onSearch }: SearchInputProps) {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
-  const [suggestions] = useState([
-    'climate change effects',
-    'machine learning basics',
-    'healthy recipes',
-    'travel destinations 2024',
-    'web development tutorials'
-  ]);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Fetch autocomplete suggestions when query changes
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (query.length > 0 && isFocused) {
+      setLoadingSuggestions(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const results = await api.autocomplete(query);
+          setSuggestions(results);
+        } catch (error) {
+          console.error('Autocomplete failed:', error);
+          setSuggestions([]);
+        } finally {
+          setLoadingSuggestions(false);
+        }
+      }, 300); // Debounce 300ms
+    } else {
+      setSuggestions([]);
+    }
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [query, isFocused]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      setShowSuggestions(false);
       onSearch(query);
     }
   };
@@ -48,6 +76,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     setShowSuggestions(false);
+    onSearch(suggestion);
     onSearch(suggestion);
   };
 
@@ -128,10 +157,12 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                      shadow-[0_4px_20px_rgba(45,62,80,0.12)]
                      overflow-hidden z-50"
           >
-            {suggestions
-              .filter(s => s.toLowerCase().includes(query.toLowerCase()))
-              .slice(0, 5)
-              .map((suggestion, index) => (
+            {loadingSuggestions ? (
+              <div className="px-7 py-4 text-[#6B7280] text-sm">
+                Loading...
+              </div>
+            ) : suggestions.length > 0 ? (
+              suggestions.slice(0, 5).map((suggestion, index) => (
                 <button
                   key={suggestion}
                   type="button"
@@ -151,7 +182,12 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                   <Search className="w-4 h-4 inline mr-3 opacity-40" />
                   {suggestion}
                 </button>
-              ))}
+              ))
+            ) : (
+              <div className="px-7 py-4 text-[#6B7280] text-sm">
+                No suggestions
+              </div>
+            )}
           </motion.div>
         )}
       </form>

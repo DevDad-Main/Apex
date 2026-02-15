@@ -1,10 +1,33 @@
 import { logger } from "devdad-express-utils";
 import app from "./app.js";
+import { invertedIndex } from "./index/invertedIndex.js";
+import { loadDocuments } from "./scraper/persistence.js";
+import { trie } from "./autocomplete/trie.js";
+import tokenizer from "./textProcessor/tokenizer.js";
 
 const PORT = process.env.PORT || 8000;
 
 (async () => {
   try {
+    // Load persisted documents and build indexes
+    const docs = loadDocuments();
+    logger.info(`Loading ${docs.length} persisted documents...`);
+    
+    for (const doc of docs) {
+      invertedIndex.addDocument({
+        id: doc.id,
+        url: doc.url,
+        title: doc.title,
+        content: doc.content,
+      });
+    }
+    
+    // Build the autocomplete trie from all documents
+    const allDocs = invertedIndex.getAllDocuments();
+    const docsArray = Array.from(allDocs.values());
+    trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text));
+    logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
+
     app.listen(PORT, () => {
       logger.info(`Apex backend is running on port ${PORT}`);
     });
@@ -20,9 +43,6 @@ const PORT = process.env.PORT || 8000;
   }
 })();
 
-/* 
-The 'unhandledRejection' event is emitted whenever a Promise is rejected and no error handler is attached to the promise within a turn of the event loop. When programming with Promises, exceptions are encapsulated as "rejected promises". Rejections can be caught and handled using promise.catch() and are propagated through a Promise chain. The 'unhandledRejection' event is useful for detecting and keeping track of promises that were rejected whose rejections have not yet been handled.
-*/
 process.on("unhandledRejection", (reason, p) => {
   logger.error("Unhandled Rejection at: Promise", { reason, p });
   process.exit(1);
