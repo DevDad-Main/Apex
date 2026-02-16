@@ -79,11 +79,12 @@ const api = {
     return response.data.data;
   },
 
-  autocomplete: async (query: string): Promise<string[]> => {
+  autocomplete: async (query: string, signal?: AbortSignal): Promise<string[]> => {
     const response = await apiClient.get<AutocompleteResponse>(
       "/autocomplete",
       {
         params: { q: query },
+        signal,
       },
     );
     return response.data.data;

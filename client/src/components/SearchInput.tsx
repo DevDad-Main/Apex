@@ -17,6 +17,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Load history when focused and input is empty
   useEffect(() => {
@@ -31,19 +32,30 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
       clearTimeout(debounceRef.current);
     }
 
+    // Cancel any pending request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     if (query.length > 0 && isFocused) {
       setLoadingSuggestions(true);
       debounceRef.current = setTimeout(async () => {
         try {
-          const results = await api.autocomplete(query);
+          abortControllerRef.current = new AbortController();
+          console.log('Fetching autocomplete for:', query);
+          const results = await api.autocomplete(query, abortControllerRef.current.signal);
+          console.log('Got results:', results.length);
           setSuggestions(results);
-        } catch (error) {
+        } catch (error: unknown) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            return;
+          }
           console.error('Autocomplete failed:', error);
           setSuggestions([]);
         } finally {
           setLoadingSuggestions(false);
         }
-      }, 300);
+      }, 800);
     } else {
       setSuggestions([]);
     }
@@ -51,6 +63,9 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
     };
   }, [query, isFocused]);

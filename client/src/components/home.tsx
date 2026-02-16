@@ -104,15 +104,7 @@ function Home() {
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-[#FAF9F6] noise-texture overflow-x-hidden">
-      {/* Radial gradient background */}
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at center, #FEFEFE 0%, #FAF9F6 100%)'
-        }}
-      />
-
+    <div className="relative min-h-screen w-full bg-white overflow-x-hidden">
       {/* Main content */}
       <div className="relative w-full min-h-screen flex flex-col items-center justify-center px-6">
         <SearchLogo />

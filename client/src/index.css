@@ -6,7 +6,7 @@
 
 @layer base {
   html, body {
-    @apply min-h-screen w-full bg-[#FAF9F6];
+    @apply min-h-screen w-full bg-white;
     -webkit-overflow-scrolling: touch;
   }
 

@@ -4,14 +4,7 @@ import { Link } from 'react-router-dom';
 
 export default function About() {
   return (
-    <div className="min-h-screen w-full bg-[#FAF9F6] noise-texture">
-      <div 
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(circle at center, #FEFEFE 0%, #FAF9F6 100%)'
-        }}
-      />
-
+    <div className="min-h-screen w-full bg-white">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

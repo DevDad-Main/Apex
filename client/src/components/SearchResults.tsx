@@ -125,7 +125,7 @@ export default function SearchResults({
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#FAF9F6] noise-texture">
+      <div className="min-h-screen w-full bg-white">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -247,7 +247,7 @@ export default function SearchResults({
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] noise-texture">
+    <div className="min-h-screen bg-white">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
