@@ -66,15 +66,39 @@ export async function saveDocumentsToCloud(): Promise<void> {
     const documents = Array.from(uniqueDocs.values());
 
     for (const doc of documents) {
-      await Document.create({
-        title: doc.title,
-        content: doc.content,
-        url: doc.url,
-      });
+      await Document.findOneAndUpdate(
+        { url: doc.url }, // Match by URL
+        { $set: doc }, // Update data
+        { upsert: true, returnDocument: "after" }, // Create if not exists
+      );
+      // await Document.create({
+      //   title: doc.title,
+      //   content: doc.content,
+      //   url: doc.url,
+      //   scrapedAt: doc.scrapedAt ?? Date.now(),
+      // });
     }
     logger.info(`Successfully inserted ${documents.length} documents`);
   } catch (error: any) {
     logger.error("Failed to insert document..", { error });
+    throw error;
+  }
+}
+
+export async function loadDocumentsFromCloud(): Promise<Document[]> {
+  try {
+    logger.info(`Fetching documents from cloud..`);
+    const documents = await Document.find({}).lean();
+    logger.info(`Successfully fetched ${documents.length} documents`);
+
+    return documents.map((doc) => ({
+      id: doc._id.toString(),
+      url: doc.url,
+      title: doc.title,
+      content: doc.content,
+    }));
+  } catch (error) {
+    logger.error(`Faild to fetch documents..`, { error });
     throw error;
   }
 }

@@ -5,7 +5,6 @@ const documentSchema = new mongoose.Schema(
     title: {
       type: String,
       required: true,
-      unique: true,
     },
     content: {
       type: String,
@@ -14,11 +13,12 @@ const documentSchema = new mongoose.Schema(
     url: {
       type: String,
       required: true,
-      unique: true,
     },
     scrapedAt: Date,
   },
   { timestamps: true },
 );
+
+documentSchema.index({ url: 1 }, { unique: true });
 
 export const Document = mongoose.model("Document", documentSchema);
