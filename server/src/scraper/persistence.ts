@@ -48,15 +48,31 @@ export function saveDocuments(documents: any[]): void {
 
 export async function saveDocumentsToCloud(): Promise<void> {
   const data: any = loadDocuments();
+
+  // De-duplicate by URL using Map
+  const uniqueDocs = new Map<string, any>();
+
+  for (const doc of data) {
+    // Key by URL - automatically overwrites duplicates
+    if (doc.url) {
+      uniqueDocs.set(doc.url, doc);
+    }
+  }
+
+  logger.info(`Unique documents after de-duplication: ${uniqueDocs.size}`);
+
   try {
-    logger.info(`Creating Doc for: `, { data });
-    data.map(async (doc: any) => {
+    // Convert Map values to array and insert
+    const documents = Array.from(uniqueDocs.values());
+
+    for (const doc of documents) {
       await Document.create({
         title: doc.title,
         content: doc.content,
         url: doc.url,
       });
-    });
+    }
+    logger.info(`Successfully inserted ${documents.length} documents`);
   } catch (error: any) {
     logger.error("Failed to insert document..", { error });
     throw error;
