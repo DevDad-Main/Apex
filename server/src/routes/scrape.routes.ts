@@ -19,6 +19,9 @@ scrapeRouter.post(
     }
     try {
       await invertedIndex.scrapeAndIndex(url);
+
+      // Rebuild sorted terms after adding new document
+      invertedIndex.rebuildSortedTerms();
     } catch (error: any) {
       logger.error("Failed to parse URL.", { error });
       return sendError(res, error.message || "Failed to parse url", 200);

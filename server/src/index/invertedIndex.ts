@@ -15,7 +15,6 @@
  * @module index/invertedIndex
  */
 
-import { log } from "console";
 import { loadDocuments, saveDocuments } from "../scraper/persistence.js";
 import { scrapeUrl } from "../scraper/scraper.js";
 import removeStopWords from "../textProcessor/stopWords.js";
@@ -110,6 +109,8 @@ class InvertedIndex {
    */
   private totalDocs: number;
 
+  private sortedTerms: string[] = [];
+
   /**
    * Creates a new empty InvertedIndex.
    *
@@ -127,9 +128,11 @@ class InvertedIndex {
    * @param docId - The unique identifier of the document
    * @returns The Document if found, undefined otherwise
    */
+  //#region Get Document
   getDocument(docId: string): Document | undefined {
     return this.documents.get(docId);
   }
+  //#endregion
 
   /**
    * Adds a document to the inverted index.
@@ -152,6 +155,7 @@ class InvertedIndex {
    *   content: "Python is a great programming language"
    * });
    */
+  //#region Add Document
   addDocument(doc: Document): void {
     // Step 1: Combine title and content (title provides additional context)
     const fullText = doc.title ? `${doc.title} ${doc.content}` : doc.content;
@@ -194,6 +198,7 @@ class InvertedIndex {
     // Track total document count
     this.totalDocs++;
   }
+  //#endregion
 
   /**
    * Searches the index for documents matching the query.
@@ -211,6 +216,7 @@ class InvertedIndex {
    * const results = index.search("python javascript");
    * // Returns: [{ documentId: "2", score: 3, termFrequency: 3 }, ...]
    */
+  //#region Search
   search(query: string): SearchResult[] {
     // Step 1: Tokenize the query (same pipeline as documents)
     const queryTokens = removeStopWords(tokenizer(query));
@@ -226,20 +232,24 @@ class InvertedIndex {
 
     // For each query term, find matching documents
     for (const term of queryTokens) {
-      const entry = this.index.get(term);
+      const matchingTerms = this.getTermsStartingWith(term);
 
-      if (!entry) {
-        continue; // Term not found in any document
-      }
+      for (const matchedTerm of matchingTerms) {
+        const entry = this.index.get(matchedTerm);
 
-      // For each document containing this term, accumulate the score
-      for (const [docId, termFreq] of entry.tf) {
-        const existing = docScores.get(docId) || { tf: 0, matches: 0 };
+        if (!entry) {
+          continue; // Term not found in any document
+        }
 
-        existing.tf += termFreq; // Sum of term frequencies
-        existing.matches += 1; // Count of query terms matched
+        // For each document containing this term, accumulate the score
+        for (const [docId, termFreq] of entry.tf) {
+          const existing = docScores.get(docId) || { tf: 0, matches: 0 };
 
-        docScores.set(docId, existing);
+          existing.tf += termFreq; // Sum of term frequencies
+          existing.matches += 1; // Count of query terms matched
+
+          docScores.set(docId, existing);
+        }
       }
     }
 
@@ -258,11 +268,15 @@ class InvertedIndex {
 
     return results;
   }
+  //#endregion
 
+  //#region Get All Documents
   getAllDocuments(): Map<string, Document> {
     return this.documents;
   }
+  //#endregion
 
+  //#region Scrape And Index
   async scrapeAndIndex(url: string): Promise<void> {
     const doc = await scrapeUrl(url);
     this.addDocument({
@@ -276,11 +290,60 @@ class InvertedIndex {
     docs.push(doc);
     saveDocuments(docs);
   }
+  //#endregion
 
-  // // Optional helpers
-  // getDocument(docId: string): Document | undefined;
-  // getTermFrequency(term: string, docId: string): number;
-  // getDocumentFrequency(term: string): number;
+  // NOTE: Old Fuzzy Matching - Big O is not good on this one
+  // private getTermsStartingWith(prefix: string): string[] {
+  //   const matches: string[] = [];
+  //   const lowerPrefix = prefix.toLowerCase();
+  //
+  //   for (const term of this.index.keys()) {
+  //     if (term.startsWith(lowerPrefix)) {
+  //       matches.push(term);
+  //     }
+  //   }
+  //
+  //   return matches;
+  // }
+
+  /** 
+		Complexity
+		- Binary search: O(log n) to find starting position
+		- Collection: O(k) where k = matching terms
+		- Total: O(log n + k)
+		- vs old O(n) linear scan!
+		*/
+  private getTermsStartingWith(prefix: string): string[] {
+    const lowerPrefix = prefix.toLowerCase();
+    const matches: string[] = [];
+
+    // Binary search to find the first term >= prefix
+    let left = 0;
+    let right = this.sortedTerms.length;
+
+    while (left < right) {
+      const mid = Math.floor((left + right) / 2);
+      if (this.sortedTerms[mid] < lowerPrefix) {
+        left = mid + 1;
+      } else {
+        right = mid;
+      }
+    }
+
+    // Now we collect all terms starting with prefix
+    while (
+      left < this.sortedTerms.length &&
+      this.sortedTerms[left].startsWith(lowerPrefix)
+    ) {
+      matches.push(this.sortedTerms[left]);
+      left++;
+    }
+    return matches;
+  }
+
+  rebuildSortedTerms(): void {
+    this.sortedTerms = Array.from(this.index.keys()).sort();
+  }
 }
 
 export const invertedIndex = new InvertedIndex();

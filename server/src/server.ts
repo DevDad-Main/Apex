@@ -27,6 +27,9 @@ const dbStatus = getDBStatus();
       });
     }
 
+    // Rebuild sorted terms for binary search
+    invertedIndex.rebuildSortedTerms();
+
     // Build autocomplete Trie from all documents
     const allDocs = invertedIndex.getAllDocuments();
     const docsArray = Array.from(allDocs.values());
