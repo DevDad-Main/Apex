@@ -1,5 +1,4 @@
 import { searchService } from "../services/searchService.js";
-import { invertedIndex } from "../index/invertedIndex.js";
 import {
   catchAsync,
   logger,
@@ -13,7 +12,7 @@ const searchRouter = Router();
 searchRouter.get(
   "/",
   catchAsync(async (req, res, next) => {
-    const { query } = req.query;
+    const { query, page, limit } = req.query;
     
     res.set("Cache-Control", "no-store, no-cache, must-revalidate");
 
@@ -26,17 +25,19 @@ searchRouter.get(
       return sendError(res, "Invalid query.", 400);
     }
 
-    // const results = invertedIndex.search(query as string);
-    const results = await searchService.search(query as string);
+    const pageNum = page ? parseInt(page as string, 10) : 1;
+    const limitNum = limit ? parseInt(limit as string, 10) : 10;
 
-    logger.info(`Results found.. ${results.length}`, { results });
+    const response = await searchService.search(query as string, pageNum, limitNum);
 
-    if (results.length === 0) {
-      return sendSuccess(res, [], "No results found for this query.", 200);
+    logger.info(`Results found.. ${response.pagination.total}`, { results: response.results });
+
+    if (response.results.length === 0) {
+      return sendSuccess(res, response, "No results found for this query.", 200);
     }
     return sendSuccess(
       res,
-      results,
+      response,
       "Successfully found searches for query",
       200,
     );

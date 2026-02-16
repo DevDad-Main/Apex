@@ -14,18 +14,24 @@ export interface SearchResult {
   content: string;
 }
 
+export interface PaginationInfo {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface SearchResponse {
+  results: SearchResult[];
+  pagination: PaginationInfo;
+}
+
 export interface Document {
   id: string;
   url: string;
   title: string;
   content: string;
   scrapedAt?: string;
-}
-
-export interface SearchResponse {
-  success: boolean;
-  data: SearchResult[];
-  message: string;
 }
 
 export interface DocumentResponse {
@@ -47,9 +53,9 @@ export interface AutocompleteResponse {
 }
 
 const api = {
-  search: async (query: string): Promise<SearchResult[]> => {
-    const response = await apiClient.get<SearchResponse>("/search", {
-      params: { query },
+  search: async (query: string, page = 1, limit = 10): Promise<SearchResponse> => {
+    const response = await apiClient.get<{ success: boolean; data: SearchResponse; message: string }>("/search", {
+      params: { query, page, limit },
     });
     return response.data.data;
   },

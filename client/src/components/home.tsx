@@ -5,7 +5,7 @@ import SearchInput from './SearchInput';
 import QuickActions from './QuickActions';
 import SearchFooter from './SearchFooter';
 import SearchResults from './SearchResults';
-import api, { SearchResult } from '../lib/api';
+import api, { SearchResult, PaginationInfo } from '../lib/api';
 
 function Home() {
   const [searchParams] = useSearchParams();
@@ -15,16 +15,18 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const isInitialLoad = useRef(true);
 
-  const handleSearch = async (query: string, updateUrl = true) => {
+  const handleSearch = async (query: string, updateUrl = true, page = 1) => {
     setSearchQuery(query);
     setLoading(true);
     
     try {
-      const results = await api.search(query);
-      setSearchResults(results);
+      const response = await api.search(query, page);
+      setSearchResults(response.results);
+      setPagination(response.pagination);
       
       if (updateUrl) {
         navigate(`/search?q=${encodeURIComponent(query)}`, { replace: true });
@@ -32,9 +34,17 @@ function Home() {
     } catch (error) {
       console.error('Search failed:', error);
       setSearchResults([]);
+      setPagination(null);
     } finally {
       setLoading(false);
       setShowResults(true);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (searchQuery) {
+      handleSearch(searchQuery, true, newPage);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -79,6 +89,8 @@ function Home() {
         onSearch={handleSearch}
         results={searchResults}
         loading={loading}
+        pagination={pagination}
+        onPageChange={handlePageChange}
       />
     );
   }

@@ -1,16 +1,18 @@
 import { motion } from "framer-motion";
-import { Search, ArrowLeft } from "lucide-react";
+import { Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { SearchResult } from "../lib/api";
+import { SearchResult, PaginationInfo } from "../lib/api";
 import api from "../lib/api";
 
 interface SearchResultsProps {
   initialQuery: string;
   onBack: () => void;
-  onSearch: (query: string) => void;
+  onSearch: (query: string, updateUrl?: boolean, page?: number) => void;
   results: SearchResult[];
   loading: boolean;
+  pagination?: PaginationInfo | null;
+  onPageChange?: (page: number) => void;
 }
 
 export default function SearchResults({
@@ -19,6 +21,8 @@ export default function SearchResults({
   onSearch,
   results,
   loading,
+  pagination,
+  onPageChange,
 }: SearchResultsProps) {
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -356,7 +360,16 @@ export default function SearchResults({
           transition={{ duration: 0.15, delay: 0.05 }}
           className="text-sm text-[#6B7280] mb-6"
           style={{ fontFamily: "'Manrope', sans-serif" }}
-        ></motion.div>
+        >
+          {pagination ? (
+            <>
+              About {pagination.total} results 
+              (Page {pagination.page} of {pagination.totalPages})
+            </>
+          ) : (
+            results.length > 0 ? `About ${results.length} results` : ''
+          )}
+        </motion.div>
 
         <div className="space-y-8">
           {results.map((result, index) => {
@@ -418,6 +431,70 @@ export default function SearchResults({
             >
               Try scraping some websites first using the API
             </p>
+          </motion.div>
+        )}
+
+        {pagination && pagination.totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center justify-center gap-2 mt-12"
+            style={{ fontFamily: "'Manrope', sans-serif" }}
+          >
+            <button
+              onClick={() => onPageChange?.(pagination.page - 1)}
+              disabled={pagination.page <= 1}
+              className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-colors ${
+                pagination.page <= 1
+                  ? "text-[#9CA3AF] cursor-not-allowed"
+                  : "text-[#2D3E50] hover:bg-[#F8F7F4]"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                let pageNum: number;
+                if (pagination.totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (pagination.page <= 3) {
+                  pageNum = i + 1;
+                } else if (pagination.page >= pagination.totalPages - 2) {
+                  pageNum = pagination.totalPages - 4 + i;
+                } else {
+                  pageNum = pagination.page - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => onPageChange?.(pageNum)}
+                    className={`w-10 h-10 rounded-lg text-sm transition-colors ${
+                      pageNum === pagination.page
+                        ? "bg-[#2D3E50] text-white"
+                        : "text-[#2D3E50] hover:bg-[#F8F7F4]"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => onPageChange?.(pagination.page + 1)}
+              disabled={pagination.page >= pagination.totalPages}
+              className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-colors ${
+                pagination.page >= pagination.totalPages
+                  ? "text-[#9CA3AF] cursor-not-allowed"
+                  : "text-[#2D3E50] hover:bg-[#F8F7F4]"
+              }`}
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </motion.div>
         )}
       </main>
