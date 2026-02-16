@@ -1,3 +1,4 @@
+import { findClosestTerm } from "@/utils/levenshtein.utils.js";
 import { searchService } from "../services/searchService.js";
 import {
   catchAsync,
@@ -13,7 +14,7 @@ searchRouter.get(
   "/",
   catchAsync(async (req, res, next) => {
     const { query, page, limit } = req.query;
-    
+
     res.set("Cache-Control", "no-store, no-cache, must-revalidate");
 
     logger.info("Search handler called with query: ... ", {
@@ -21,19 +22,31 @@ searchRouter.get(
       IP: req.ip,
     });
 
-    if (!query || query.length === 0) {
+    if (!query) {
       return sendError(res, "Invalid query.", 400);
     }
 
     const pageNum = page ? parseInt(page as string, 10) : 1;
     const limitNum = limit ? parseInt(limit as string, 10) : 10;
 
-    const response = await searchService.search(query as string, pageNum, limitNum);
+    const response = await searchService.search(
+      query as string,
+      pageNum,
+      limitNum,
+    );
 
-    logger.info(`Results found.. ${response.pagination.total}`, { results: response.results });
+    logger.info(`Results found.. ${response.pagination.total}`, {
+      results: response.results,
+    });
 
     if (response.results.length === 0) {
-      return sendSuccess(res, response, "No results found for this query.", 200);
+      const correction = findClosestTerm(query as string);
+      return sendSuccess(
+        res,
+        { response, correction },
+        `No results found for this query. Did you mean: ${correction}?`,
+        200,
+      );
     }
     return sendSuccess(
       res,
@@ -56,7 +69,15 @@ searchRouter.get(
 
     return sendSuccess(
       res,
-      { results, pagination: { total: results.length, page: 1, limit: limitNum, totalPages: 1 } },
+      {
+        results,
+        pagination: {
+          total: results.length,
+          page: 1,
+          limit: limitNum,
+          totalPages: 1,
+        },
+      },
       "Random results",
       200,
     );

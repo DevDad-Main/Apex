@@ -18,6 +18,7 @@ function Home() {
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [correction, setCorrection] = useState<string | null>(null);
   const isInitialLoad = useRef(true);
 
   const handleSearch = async (query: string, updateUrl = true, page = 1) => {
@@ -28,6 +29,7 @@ function Home() {
       const response = await api.search(query, page);
       setSearchResults(response.results);
       setPagination(response.pagination);
+      setCorrection(response.correction || null);
       
       if (updateUrl) {
         addToHistory(query);
@@ -99,6 +101,7 @@ function Home() {
         loading={loading}
         pagination={pagination}
         onPageChange={handlePageChange}
+        correction={correction}
       />
     );
   }

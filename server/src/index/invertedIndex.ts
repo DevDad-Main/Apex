@@ -350,6 +350,10 @@ class InvertedIndex {
   rebuildSortedTerms(): void {
     this.sortedTerms = Array.from(this.index.keys()).sort();
   }
+
+  getSortedTerms(): string[] {
+    return this.sortedTerms;
+  }
 }
 
 export const invertedIndex = new InvertedIndex();

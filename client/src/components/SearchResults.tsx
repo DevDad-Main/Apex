@@ -13,6 +13,7 @@ interface SearchResultsProps {
   loading: boolean;
   pagination?: PaginationInfo | null;
   onPageChange?: (page: number) => void;
+  correction?: string | null;
 }
 
 export default function SearchResults({
@@ -23,6 +24,7 @@ export default function SearchResults({
   loading,
   pagination,
   onPageChange,
+  correction,
 }: SearchResultsProps) {
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -367,12 +369,12 @@ export default function SearchResults({
               (Page {pagination.page} of {pagination.totalPages})
             </>
           ) : (
-            results.length > 0 ? `About ${results.length} results` : ''
+            results?.length > 0 ? `About ${results.length} results` : ''
           )}
         </motion.div>
 
         <div className="space-y-8">
-          {results.map((result, index) => {
+          {(results || []).map((result, index) => {
             // Results now include full document data directly
             if (!result.url) return null;
 
@@ -413,7 +415,7 @@ export default function SearchResults({
           })}
         </div>
 
-        {results.length === 0 && !loading && (
+        {(results || []).length === 0 && !loading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -425,8 +427,17 @@ export default function SearchResults({
             >
               No results found for "{initialQuery}"
             </p>
+            {correction && (
+              <button
+                onClick={() => onSearch(correction)}
+                className="text-[#3D5A4C] mt-3 hover:underline"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Did you mean: <span className="font-medium">{correction}</span>?
+              </button>
+            )}
             <p
-              className="text-[#9CA3AF] text-sm mt-2"
+              className="text-[#9CA3AF] text-sm mt-4"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
               Try scraping some websites first using the API

@@ -6,6 +6,7 @@ import { loadDocumentsFromCloud } from "./scraper/persistence.js";
 import { trie } from "./autocomplete/trie.js";
 import tokenizer from "./textProcessor/tokenizer.js";
 import { initializeRedisClient } from "./utils/redis.utils.js";
+import { findClosestTerm } from "./utils/levenshtein.utils.js";
 
 await connectDB();
 
@@ -45,6 +46,9 @@ const dbStatus = getDBStatus();
       logger.info(`🚀 Apex search engine running on port ${PORT}`);
       logger.info(`📊 Database status: `, { dbStatus });
     });
+
+    // logger.info("Find closes term using levenshtein..");
+    // logger.info(`Levenshtein result is...${findClosestTerm("pythn")}`);
 
     // Graceful shutdown
     process.on("SIGTERM", () => {

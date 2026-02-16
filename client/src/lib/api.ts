@@ -24,6 +24,7 @@ export interface PaginationInfo {
 export interface SearchResponse {
   results: SearchResult[];
   pagination: PaginationInfo;
+  correction?: string;
 }
 
 export interface Document {
