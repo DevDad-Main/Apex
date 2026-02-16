@@ -5,6 +5,11 @@
 @tailwind utilities;
 
 @layer base {
+  html, body {
+    @apply min-h-screen w-full bg-[#FAF9F6];
+    -webkit-overflow-scrolling: touch;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
