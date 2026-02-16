@@ -1,6 +1,6 @@
-import { trie } from "@/autocomplete/trie.js";
-import { invertedIndex } from "@/index/invertedIndex.js";
-import { initializeRedisClient } from "@/utils/redis.utils.js";
+import { trie } from "../autocomplete/trie.js";
+import { invertedIndex } from "../index/invertedIndex.js";
+import { initializeRedisClient } from "../utils/redis.utils.js";
 
 class SearchService {
   async search(query: string) {

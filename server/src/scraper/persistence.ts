@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { Document } from "@/models/Document.model.js";
+import { Document } from "../models/Document.model.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "devdad-express-utils";
@@ -70,7 +70,7 @@ export async function saveDocumentsToCloud(): Promise<void> {
       await Document.findOneAndUpdate(
         { url: doc.url },
         { $set: doc },
-        { upsert: true, returnDocument: "after" }
+        { upsert: true, returnDocument: "after" },
       );
     }
 
