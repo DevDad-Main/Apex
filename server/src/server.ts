@@ -5,6 +5,7 @@ import { invertedIndex } from "./index/invertedIndex.js";
 import { loadDocumentsFromCloud } from "./scraper/persistence.js";
 import { trie } from "./autocomplete/trie.js";
 import tokenizer from "./textProcessor/tokenizer.js";
+import { initializeRedisClient } from "./utils/redis.utils.js";
 
 await connectDB();
 
@@ -35,6 +36,9 @@ const dbStatus = getDBStatus();
     const docsArray = Array.from(allDocs.values());
     trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text));
     logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
+
+    await initializeRedisClient();
+    logger.info("Redis client initialized");
 
     // Start the server
     app.listen(PORT, () => {
