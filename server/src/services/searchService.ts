@@ -6,7 +6,7 @@ class SearchService {
   async search(query: string) {
     try {
       const client = await initializeRedisClient();
-      
+
       const cached = await client.get(`search:${query}`);
       if (cached) return JSON.parse(cached);
     } catch (error) {
@@ -17,7 +17,6 @@ class SearchService {
 
     const resultsWithDocs = results.map((result) => {
       const doc = invertedIndex.getDocument(result.documentId);
-
       return {
         documentId: result.documentId,
         score: result.score,
@@ -35,7 +34,7 @@ class SearchService {
     } catch (error) {
       // Redis not available, skip caching
     }
-    
+
     return resultsWithDocs;
   }
 

@@ -62,16 +62,12 @@ const api = {
   },
 
   getDocument: async (id: string): Promise<Document> => {
-    const response = await apiClient.get<DocumentResponse>(
-      `/document/${id}`,
-    );
+    const response = await apiClient.get<DocumentResponse>(`/document/${id}`);
     return response.data.data;
   },
 
   getAllDocuments: async (): Promise<Document[]> => {
-    const response = await apiClient.get<DocumentsListResponse>(
-      "/document",
-    );
+    const response = await apiClient.get<DocumentsListResponse>("/document");
 
     console.log(`Documents DATA: `, response.data.data);
     return response.data.data;
