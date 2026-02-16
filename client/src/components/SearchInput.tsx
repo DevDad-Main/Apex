@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search } from 'lucide-react';
+import { Search, X, Clock, Trash2 } from 'lucide-react';
 import api from '../lib/api';
+import { getSearchHistory, removeFromHistory, clearSearchHistory, SearchHistoryItem } from '../hooks/useSearchHistory';
 
 interface SearchInputProps {
   onSearch: (query: string) => void;
@@ -14,7 +15,15 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load history when focused and input is empty
+  useEffect(() => {
+    if (isFocused && query.length === 0) {
+      setHistory(getSearchHistory());
+    }
+  }, [isFocused, query]);
 
   // Fetch autocomplete suggestions when query changes
   useEffect(() => {
@@ -34,7 +43,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
         } finally {
           setLoadingSuggestions(false);
         }
-      }, 300); // Debounce 300ms
+      }, 300);
     } else {
       setSuggestions([]);
     }
@@ -55,21 +64,24 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions || suggestions.length === 0) return;
+    const activeList = query.length > 0 ? suggestions : history;
+    if (activeList.length === 0) return;
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex(prev => 
-        prev < suggestions.length - 1 ? prev + 1 : prev
+        prev < activeList.length - 1 ? prev + 1 : prev
       );
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
     } else if (e.key === 'Enter' && selectedIndex >= 0) {
       e.preventDefault();
-      setQuery(suggestions[selectedIndex]);
+      const item = activeList[selectedIndex];
+      const searchQuery = typeof item === 'string' ? item : item.query;
+      setQuery(searchQuery);
       setShowSuggestions(false);
-      onSearch(suggestions[selectedIndex]);
+      onSearch(searchQuery);
     }
   };
 
@@ -77,7 +89,22 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     setQuery(suggestion);
     setShowSuggestions(false);
     onSearch(suggestion);
-    onSearch(suggestion);
+  };
+
+  const handleHistoryClick = (item: SearchHistoryItem) => {
+    setShowSuggestions(false);
+    onSearch(item.query);
+  };
+
+  const handleDeleteHistory = (e: React.MouseEvent, query: string) => {
+    e.stopPropagation();
+    removeFromHistory(query);
+    setHistory(getSearchHistory());
+  };
+
+  const handleClearHistory = () => {
+    clearSearchHistory();
+    setHistory([]);
   };
 
   return (
@@ -100,12 +127,16 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              setShowSuggestions(e.target.value.length > 0);
+              setShowSuggestions(e.target.value.length > 0 || history.length > 0);
               setSelectedIndex(-1);
             }}
             onFocus={() => {
               setIsFocused(true);
-              if (query.length > 0) setShowSuggestions(true);
+              // Load history synchronously and show dropdown
+              const recentHistory = getSearchHistory();
+              setHistory(recentHistory);
+              // Show dropdown if there's history or if we have query
+              setShowSuggestions(recentHistory.length > 0 || query.length > 0);
             }}
             onBlur={() => {
               setIsFocused(false);
@@ -144,8 +175,8 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
           </motion.button>
         </motion.div>
 
-        {/* Type-ahead suggestions */}
-        {showSuggestions && query.length > 0 && (
+        {/* Suggestions / History Dropdown */}
+        {(showSuggestions || isFocused) && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -155,35 +186,92 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                      shadow-[0_4px_20px_rgba(45,62,80,0.12)]
                      overflow-hidden z-50"
           >
-            {loadingSuggestions ? (
+            {/* Show autocomplete if there's a query */}
+            {query.length > 0 && (
+              <>
+                {loadingSuggestions ? (
+                  <div className="px-7 py-4 text-[#6B7280] text-sm">
+                    Loading...
+                  </div>
+                ) : suggestions.length > 0 ? (
+                  suggestions.slice(0, 5).map((suggestion, index) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                      className={`
+                        w-full px-7 py-4 text-left
+                        text-[#2D3E50] text-base
+                        transition-colors duration-150
+                        ${selectedIndex === index 
+                          ? 'bg-[#F5F5F3]' 
+                          : 'hover:bg-[#F8F7F4]'
+                        }
+                        ${index !== 0 ? 'border-t border-[#F0EFE9]' : ''}
+                      `}
+                      style={{ fontFamily: "'Manrope', sans-serif" }}
+                    >
+                      <Search className="w-4 h-4 inline mr-3 opacity-40" />
+                      {suggestion}
+                    </button>
+                  ))
+                ) : null}
+              </>
+            )}
+
+            {/* Show history if no query or no autocomplete results */}
+            {query.length === 0 && history.length > 0 && (
+              <>
+                <div className="flex items-center justify-between px-7 py-3 border-b border-[#F0EFE9]">
+                  <span className="text-xs text-[#9CA3AF] uppercase tracking-wide" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                    Recent searches
+                  </span>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={handleClearHistory}
+                      className="text-xs text-[#6B7280] hover:text-[#2D3E50] transition-colors"
+                      style={{ fontFamily: "'Manrope', sans-serif" }}
+                    >
+                    Clear all
+                  </button>
+                </div>
+                {history.map((item, index) => (
+                  <div
+                    key={item.query}
+                    className={`
+                      flex items-center justify-between px-7 py-3
+                      text-[#2D3E50] text-base
+                      hover:bg-[#F8F7F4]
+                      transition-colors duration-150 cursor-pointer
+                      ${index !== 0 ? 'border-t border-[#F0EFE9]' : ''}
+                    `}
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleHistoryClick(item)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 opacity-40" />
+                      {item.query}
+                    </div>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onClick={(e) => handleDeleteHistory(e, item.query)}
+                      className="text-[#9CA3AF] hover:text-[#2D3E50] transition-colors p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {/* Empty state for history */}
+            {query.length === 0 && history.length === 0 && (
               <div className="px-7 py-4 text-[#6B7280] text-sm">
-                Loading...
-              </div>
-            ) : suggestions.length > 0 ? (
-              suggestions.slice(0, 5).map((suggestion, index) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => handleSuggestionClick(suggestion)}
-                  className={`
-                    w-full px-7 py-4 text-left
-                    text-[#2D3E50] text-base
-                    transition-colors duration-150
-                    ${selectedIndex === index 
-                      ? 'bg-[#F5F5F3]' 
-                      : 'hover:bg-[#F8F7F4]'
-                    }
-                    ${index !== 0 ? 'border-t border-[#F0EFE9]' : ''}
-                  `}
-                  style={{ fontFamily: "'Manrope', sans-serif" }}
-                >
-                  <Search className="w-4 h-4 inline mr-3 opacity-40" />
-                  {suggestion}
-                </button>
-              ))
-            ) : (
-              <div className="px-7 py-4 text-[#6B7280] text-sm">
-                No suggestions
+                No recent searches
               </div>
             )}
           </motion.div>

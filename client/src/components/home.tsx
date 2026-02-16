@@ -6,6 +6,7 @@ import QuickActions from './QuickActions';
 import SearchFooter from './SearchFooter';
 import SearchResults from './SearchResults';
 import api, { SearchResult, PaginationInfo } from '../lib/api';
+import { addToHistory } from '../hooks/useSearchHistory';
 
 function Home() {
   const [searchParams] = useSearchParams();
@@ -29,6 +30,7 @@ function Home() {
       setPagination(response.pagination);
       
       if (updateUrl) {
+        addToHistory(query);
         navigate(`/search?q=${encodeURIComponent(query)}`, { replace: true });
       }
     } catch (error) {
