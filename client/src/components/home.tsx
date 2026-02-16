@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import SearchLogo from './SearchLogo';
 import SearchInput from './SearchInput';
 import QuickActions from './QuickActions';
@@ -10,6 +10,7 @@ import api, { SearchResult } from '../lib/api';
 function Home() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
@@ -41,13 +42,15 @@ function Home() {
     if (!isInitialLoad.current) return;
     isInitialLoad.current = false;
     
-    const query = searchParams.get('q');
-    
-    if (query) {
-      setSearchQuery(query);
-      handleSearch(query, false);
+    // Only restore search if we're on /search route (not /)
+    if (location.pathname === '/search') {
+      const query = searchParams.get('q');
+      if (query) {
+        setSearchQuery(query);
+        handleSearch(query, false);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, location.pathname]);
 
   const handleLuckyClick = () => {
     const luckyQueries = [

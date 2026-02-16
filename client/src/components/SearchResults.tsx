@@ -1,8 +1,9 @@
 import { motion } from "framer-motion";
 import { Search, ArrowLeft } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { SearchResult } from "../lib/api";
+import api from "../lib/api";
 
 interface SearchResultsProps {
   initialQuery: string;
@@ -20,12 +21,69 @@ export default function SearchResults({
   loading,
 }: SearchResultsProps) {
   const [query, setQuery] = useState(initialQuery);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const navigate = useNavigate();
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    if (query.length > 0) {
+      setLoadingSuggestions(true);
+      debounceRef.current = setTimeout(async () => {
+        try {
+          const res = await api.autocomplete(query);
+          setSuggestions(res);
+        } catch {
+          setSuggestions([]);
+        } finally {
+          setLoadingSuggestions(false);
+        }
+      }, 300);
+    } else {
+      setSuggestions([]);
+    }
+
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [query]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
+      setShowSuggestions(false);
       onSearch(query);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setQuery(suggestion);
+    setShowSuggestions(false);
+    onSearch(suggestion);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) =>
+        prev < suggestions.length - 1 ? prev + 1 : prev
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
+      e.preventDefault();
+      handleSuggestionClick(suggestions[selectedIndex]);
     }
   };
 
@@ -84,7 +142,7 @@ export default function SearchResults({
               <h2
                 className="text-2xl font-light text-[#2D3E50] cursor-pointer hover:opacity-80"
                 style={{ fontFamily: "'Fraunces', serif" }}
-                onClick={() => navigate("/")}
+                onClick={onBack}
               >
                 Apex
               </h2>
@@ -96,7 +154,18 @@ export default function SearchResults({
                 <input
                   type="text"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  onChange={(e) => {
+                    setQuery(e.target.value);
+                    setShowSuggestions(e.target.value.length > 0);
+                    setSelectedIndex(-1);
+                  }}
+                  onFocus={() => {
+                    if (query.length > 0) setShowSuggestions(true);
+                  }}
+                  onBlur={() => {
+                    setTimeout(() => setShowSuggestions(false), 200);
+                  }}
+                  onKeyDown={handleKeyDown}
                   className="w-full h-12 px-5 pr-12
                            bg-[#F8F7F4] text-[#2D3E50]
                            rounded-lg border border-[#E8E7E1]
@@ -112,6 +181,50 @@ export default function SearchResults({
                 >
                   <Search className="w-4 h-4" />
                 </button>
+
+                {showSuggestions && query.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute top-[calc(100%+8px)] left-0 right-0
+                             bg-[#FEFEFE] rounded-lg
+                             shadow-[0_4px_20px_rgba(45,62,80,0.12)]
+                             overflow-hidden z-50"
+                  >
+                    {loadingSuggestions ? (
+                      <div className="px-5 py-3 text-[#6B7280] text-sm">
+                        Loading...
+                      </div>
+                    ) : suggestions.length > 0 ? (
+                      suggestions.slice(0, 5).map((suggestion, index) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          className={`
+                            w-full px-5 py-3 text-left
+                            text-[#2D3E50] text-base
+                            transition-colors duration-150
+                            ${
+                              selectedIndex === index
+                                ? "bg-[#F5F5F3]"
+                                : "hover:bg-[#F8F7F4]"
+                            }
+                          `}
+                          style={{ fontFamily: "'Manrope', sans-serif" }}
+                        >
+                          <Search className="w-4 h-4 inline mr-3 opacity-40" />
+                          {suggestion}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-5 py-3 text-[#6B7280] text-sm">
+                        No suggestions
+                      </div>
+                    )}
+                  </motion.div>
+                )}
               </form>
             </div>
           </div>
@@ -151,7 +264,7 @@ export default function SearchResults({
             <h2
               className="text-2xl font-light text-[#2D3E50] cursor-pointer hover:opacity-80"
               style={{ fontFamily: "'Fraunces', serif" }}
-              onClick={() => navigate("/")}
+              onClick={onBack}
             >
               Apex
             </h2>
@@ -160,7 +273,18 @@ export default function SearchResults({
               <input
                 type="text"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setShowSuggestions(e.target.value.length > 0);
+                  setSelectedIndex(-1);
+                }}
+                onFocus={() => {
+                  if (query.length > 0) setShowSuggestions(true);
+                }}
+                onBlur={() => {
+                  setTimeout(() => setShowSuggestions(false), 200);
+                }}
+                onKeyDown={handleKeyDown}
                 className="w-full h-12 px-5 pr-12
                          bg-[#F8F7F4] text-[#2D3E50]
                          rounded-lg border border-[#E8E7E1]
@@ -176,6 +300,50 @@ export default function SearchResults({
               >
                 <Search className="w-4 h-4" />
               </button>
+
+              {showSuggestions && query.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-[calc(100%+8px)] left-0 right-0
+                           bg-[#FEFEFE] rounded-lg
+                           shadow-[0_4px_20px_rgba(45,62,80,0.12)]
+                           overflow-hidden z-50"
+                >
+                  {loadingSuggestions ? (
+                    <div className="px-5 py-3 text-[#6B7280] text-sm">
+                      Loading...
+                    </div>
+                  ) : suggestions.length > 0 ? (
+                    suggestions.slice(0, 5).map((suggestion, index) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className={`
+                          w-full px-5 py-3 text-left
+                          text-[#2D3E50] text-base
+                          transition-colors duration-150
+                          ${
+                            selectedIndex === index
+                              ? "bg-[#F5F5F3]"
+                              : "hover:bg-[#F8F7F4]"
+                          }
+                        `}
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        <Search className="w-4 h-4 inline mr-3 opacity-40" />
+                        {suggestion}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-5 py-3 text-[#6B7280] text-sm">
+                      No suggestions
+                    </div>
+                  )}
+                </motion.div>
+              )}
             </form>
           </div>
         </div>
