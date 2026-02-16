@@ -1,15 +1,14 @@
 import { Suspense } from "react";
-import { Routes, Route, useSearchParams } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Home from "./components/home";
+import About from "./components/About";
 
 function AppRoutes() {
-  const [searchParams] = useSearchParams();
-  const query = searchParams.get('q');
-
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/search" element={<Home />} />
+      <Route path="/about" element={<About />} />
     </Routes>
   );
 }

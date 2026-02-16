@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 export default function SearchFooter() {
   const links = [
-    { label: 'About', href: '#' },
+    { label: 'About', href: '/about' },
     { label: 'Privacy', href: '#' },
     { label: 'Settings', href: '#' },
   ];
@@ -16,9 +17,11 @@ export default function SearchFooter() {
     >
       <div className="flex justify-center gap-8">
         {links.map((link, index) => (
-          <motion.a
+          <Link
             key={link.label}
-            href={link.href}
+            to={link.href}
+            target={link.href.startsWith('http') ? '_blank' : undefined}
+            rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
             whileHover={{ y: -2 }}
             transition={{ duration: 0.2 }}
             className="text-[#6B7280] text-sm font-light
@@ -30,7 +33,7 @@ export default function SearchFooter() {
             }}
           >
             {link.label}
-          </motion.a>
+          </Link>
         ))}
       </div>
     </motion.footer>

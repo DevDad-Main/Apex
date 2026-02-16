@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { SearchResult, PaginationInfo } from "../lib/api";
 import api from "../lib/api";
 
@@ -498,6 +498,20 @@ export default function SearchResults({
           </motion.div>
         )}
       </main>
+
+      <footer className="border-t border-[#E8E7E1] py-6 mt-12">
+        <div className="max-w-3xl mx-auto px-6 flex justify-center gap-8">
+          <Link
+            to="/about"
+            className="text-[#6B7280] text-sm font-light hover:text-[#2D3E50] transition-colors"
+            style={{ fontFamily: "'Manrope', sans-serif" }}
+          >
+            About
+          </Link>
+          <span className="text-[#6B7280] text-sm">Privacy</span>
+          <span className="text-[#6B7280] text-sm">Settings</span>
+        </div>
+      </footer>
     </div>
   );
 }
