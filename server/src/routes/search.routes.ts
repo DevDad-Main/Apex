@@ -14,6 +14,9 @@ searchRouter.get(
   "/",
   catchAsync(async (req, res, next) => {
     const { query } = req.query;
+    
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+
     logger.info("Search handler called with query: ... ", {
       Query: req.query,
       IP: req.ip,
@@ -29,7 +32,7 @@ searchRouter.get(
     logger.info(`Results found.. ${results.length}`, { results });
 
     if (results.length === 0) {
-      return sendSuccess(res, {}, "No results found for this query.", 200);
+      return sendSuccess(res, [], "No results found for this query.", 200);
     }
     return sendSuccess(
       res,
