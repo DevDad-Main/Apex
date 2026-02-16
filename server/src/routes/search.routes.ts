@@ -1,4 +1,4 @@
-import { findClosestTerm } from "@/utils/levenshtein.utils.js";
+import { findClosestTerm } from "../utils/levenshtein.utils.js";
 import { searchService } from "../services/searchService.js";
 import {
   catchAsync,
