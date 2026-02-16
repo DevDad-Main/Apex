@@ -1,4 +1,4 @@
-import { searchService } from "@/services/searchService.js";
+import { searchService } from "../services/searchService.js";
 import { trie } from "../autocomplete/trie.js";
 import { catchAsync, sendError, sendSuccess } from "devdad-express-utils";
 import { Router } from "express";
@@ -27,4 +27,3 @@ router.get(
 );
 
 export default router;
-

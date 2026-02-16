@@ -1,4 +1,4 @@
-import { searchService } from "@/services/searchService.js";
+import { searchService } from "../services/searchService.js";
 import { invertedIndex } from "../index/invertedIndex.js";
 import {
   catchAsync,
