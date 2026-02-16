@@ -1,11 +1,13 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE = '/apex';
+const API_BASE = "/apex";
 
 export interface SearchResult {
   documentId: string;
   score: number;
-  termFrequency: number;
+  title: string;
+  url: string;
+  content: string;
 }
 
 export interface Document {
@@ -49,24 +51,35 @@ const api = {
   },
 
   scrape: async (url: string): Promise<Document> => {
-    const response = await axios.post<DocumentResponse>(`${API_BASE}/scrape`, { url });
+    const response = await axios.post<DocumentResponse>(`${API_BASE}/scrape`, {
+      url,
+    });
     return response.data.data;
   },
 
   getDocument: async (id: string): Promise<Document> => {
-    const response = await axios.get<DocumentResponse>(`${API_BASE}/document/${id}`);
+    const response = await axios.get<DocumentResponse>(
+      `${API_BASE}/document/${id}`,
+    );
     return response.data.data;
   },
 
   getAllDocuments: async (): Promise<Document[]> => {
-    const response = await axios.get<DocumentsListResponse>(`${API_BASE}/document`);
+    const response = await axios.get<DocumentsListResponse>(
+      `${API_BASE}/document`,
+    );
+
+    console.log(`Documents DATA: `, response.data.data);
     return response.data.data;
   },
 
   autocomplete: async (query: string): Promise<string[]> => {
-    const response = await axios.get<AutocompleteResponse>(`${API_BASE}/autocomplete`, {
-      params: { q: query },
-    });
+    const response = await axios.get<AutocompleteResponse>(
+      `${API_BASE}/autocomplete`,
+      {
+        params: { q: query },
+      },
+    );
     return response.data.data;
   },
 };

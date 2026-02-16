@@ -26,6 +26,8 @@ searchRouter.get(
     // const results = invertedIndex.search(query as string);
     const results = await searchService.search(query as string);
 
+    logger.info(`Results found.. ${results.length}`, { results });
+
     if (results.length === 0) {
       return sendSuccess(res, {}, "No results found for this query.", 200);
     }

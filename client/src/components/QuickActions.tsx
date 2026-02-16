@@ -9,7 +9,7 @@ export default function QuickActions({ onLuckyClick }: QuickActionsProps) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.3, ease: 'easeOut' }}
+      transition={{ duration: 0.25, delay: 0.15, ease: 'easeOut' }}
       className="flex gap-4 mt-8"
     >
       <motion.button

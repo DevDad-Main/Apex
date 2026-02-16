@@ -1,7 +1,6 @@
 import { trie } from "@/autocomplete/trie.js";
 import { invertedIndex } from "@/index/invertedIndex.js";
 import { initializeRedisClient } from "@/utils/redis.utils.js";
-import { logger } from "devdad-express-utils";
 
 class SearchService {
   async search(query: string) {
@@ -14,28 +13,30 @@ class SearchService {
     // Query Index
     const results = invertedIndex.search(query);
 
-    // Cache results - stringify the array data
-    await client.set(`search:${query}`, JSON.stringify(results), { EX: 300 });
-    return results;
+    const resultsWithDocs = results.map((result) => {
+      const doc = invertedIndex.getDocument(result.documentId);
+
+      return {
+        documentId: result.documentId,
+        score: result.score,
+        // Also include the full document for FE.
+        title: doc?.title,
+        url: doc?.url,
+        content: doc?.content,
+      };
+    });
+
+    // Cache results - stringify the array data.
+    // Also now cache the full resut doc so we send the whole data to the FE.
+    await client.set(`search:${query}`, JSON.stringify(resultsWithDocs), {
+      EX: 300,
+    });
+    return resultsWithDocs;
   }
 
   async autocomplete(query: string, limit: number) {
-    // Check Cache first
-    const client = await initializeRedisClient();
-
-    const cached = await client.get(`autocomplete:${query}`);
-    if (cached) {
-      logger.info(`Returning Cached Autocomplete data..`, { cached });
-      return JSON.parse(cached);
-    }
-
-    const results = trie.getSuggestions(query, limit);
-    await client.set(`autocomplete:${query}`, JSON.stringify(results), {
-      EX: 600,
-    });
-
-    logger.info(`Caching Autocomplete Results..`, { results });
-    return results;
+    // Trie is already fast in-memory, no need for Redis caching
+    return trie.getSuggestions(query, limit);
   }
 }
 

@@ -6,10 +6,10 @@ import { loadDocumentsFromCloud } from "./scraper/persistence.js";
 import { trie } from "./autocomplete/trie.js";
 import tokenizer from "./textProcessor/tokenizer.js";
 
+await connectDB();
+
 const PORT = process.env.PORT || 8000;
 const dbStatus = getDBStatus();
-
-await connectDB();
 
 (async () => {
   try {

@@ -1,19 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import SearchLogo from './SearchLogo';
 import SearchInput from './SearchInput';
 import QuickActions from './QuickActions';
 import SearchFooter from './SearchFooter';
 import SearchResults from './SearchResults';
-import api, { Document, SearchResult } from '../lib/api';
+import api, { SearchResult } from '../lib/api';
 
 function Home() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  
   const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [documents, setDocuments] = useState<Map<string, Document>>(new Map());
   const [loading, setLoading] = useState(false);
+  const isInitialLoad = useRef(true);
 
-  const handleSearch = async (query: string) => {
+  const handleSearch = async (query: string, updateUrl = true) => {
     setSearchQuery(query);
     setLoading(true);
     
@@ -21,17 +25,8 @@ function Home() {
       const results = await api.search(query);
       setSearchResults(results);
       
-      if (results.length > 0) {
-        const docsMap = new Map<string, Document>();
-        for (const result of results) {
-          try {
-            const doc = await api.getDocument(result.documentId);
-            docsMap.set(result.documentId, doc);
-          } catch (err) {
-            console.error('Failed to fetch document:', result.documentId);
-          }
-        }
-        setDocuments(docsMap);
+      if (updateUrl) {
+        navigate(`/search?q=${encodeURIComponent(query)}`, { replace: true });
       }
     } catch (error) {
       console.error('Search failed:', error);
@@ -41,6 +36,18 @@ function Home() {
       setShowResults(true);
     }
   };
+
+  useEffect(() => {
+    if (!isInitialLoad.current) return;
+    isInitialLoad.current = false;
+    
+    const query = searchParams.get('q');
+    
+    if (query) {
+      setSearchQuery(query);
+      handleSearch(query, false);
+    }
+  }, [searchParams]);
 
   const handleLuckyClick = () => {
     const luckyQueries = [
@@ -58,7 +65,7 @@ function Home() {
     setShowResults(false);
     setSearchQuery(null);
     setSearchResults([]);
-    setDocuments(new Map());
+    navigate('/', { replace: true });
   };
 
   if (showResults && searchQuery) {
@@ -68,7 +75,6 @@ function Home() {
         onBack={handleBack}
         onSearch={handleSearch}
         results={searchResults}
-        documents={documents}
         loading={loading}
       />
     );

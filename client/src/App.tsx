@@ -1,15 +1,23 @@
 import { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, useSearchParams } from "react-router-dom";
 import Home from "./components/home";
+
+function AppRoutes() {
+  const [searchParams] = useSearchParams();
+  const query = searchParams.get('q');
+
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/search" element={<Home />} />
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <Suspense fallback={<p>Loading...</p>}>
-      <>
-        <Routes>
-          <Route path="/" element={<Home />} />
-        </Routes>
-      </>
+      <AppRoutes />
     </Suspense>
   );
 }

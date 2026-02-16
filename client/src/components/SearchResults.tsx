@@ -1,19 +1,26 @@
-import { motion } from 'framer-motion';
-import { Search, ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
-import { SearchResult, Document } from '../lib/api';
+import { motion } from "framer-motion";
+import { Search, ArrowLeft } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { SearchResult } from "../lib/api";
 
 interface SearchResultsProps {
   initialQuery: string;
   onBack: () => void;
   onSearch: (query: string) => void;
   results: SearchResult[];
-  documents: Map<string, Document>;
   loading: boolean;
 }
 
-export default function SearchResults({ initialQuery, onBack, onSearch, results, documents, loading }: SearchResultsProps) {
+export default function SearchResults({
+  initialQuery,
+  onBack,
+  onSearch,
+  results,
+  loading,
+}: SearchResultsProps) {
   const [query, setQuery] = useState(initialQuery);
+  const navigate = useNavigate();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +30,7 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
   };
 
   const handleResultClick = (url: string) => {
-    window.open(url, '_blank', 'noopener,noreferrer');
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const formatUrl = (url: string) => {
@@ -39,18 +46,18 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
     const lowerContent = content.toLowerCase();
     const lowerQuery = searchQuery.toLowerCase();
     const index = lowerContent.indexOf(lowerQuery);
-    
+
     if (index === -1) {
-      return content.slice(0, 200) + '...';
+      return content.slice(0, 200) + "...";
     }
-    
+
     const start = Math.max(0, index - 80);
     const end = Math.min(content.length, index + searchQuery.length + 120);
     let snippet = content.slice(start, end);
-    
-    if (start > 0) snippet = '...' + snippet;
-    if (end < content.length) snippet = snippet + '...';
-    
+
+    if (start > 0) snippet = "..." + snippet;
+    if (end < content.length) snippet = snippet + "...";
+
     return snippet;
   };
 
@@ -60,7 +67,7 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.2 }}
           className="sticky top-0 bg-[#FEFEFE] border-b border-[#E8E7E1] shadow-sm z-50"
         >
           <div className="max-w-7xl mx-auto px-6 py-4">
@@ -69,19 +76,23 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
                 onClick={onBack}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-[#2D3E50] hover:text-[#3d5264] transition-colors"
+                className="text-[#2D3E50] hover:text-[#3d5264] transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-5 h-5" />
               </motion.button>
 
-              <h2 
-                className="text-2xl font-light text-[#2D3E50]"
+              <h2
+                className="text-2xl font-light text-[#2D3E50] cursor-pointer hover:opacity-80"
                 style={{ fontFamily: "'Fraunces', serif" }}
+                onClick={() => navigate("/")}
               >
                 Apex
               </h2>
 
-              <form onSubmit={handleSubmit} className="flex-1 max-w-2xl relative">
+              <form
+                onSubmit={handleSubmit}
+                className="flex-1 max-w-2xl relative"
+              >
                 <input
                   type="text"
                   value={query}
@@ -107,7 +118,10 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
         </motion.header>
 
         <main className="max-w-3xl mx-auto px-6 py-8 flex items-center justify-center min-h-[50vh]">
-          <div className="text-[#6B7280]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+          <div
+            className="text-[#6B7280]"
+            style={{ fontFamily: "'Manrope', sans-serif" }}
+          >
             Loading...
           </div>
         </main>
@@ -120,7 +134,7 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
+        transition={{ duration: 0.2 }}
         className="sticky top-0 bg-[#FEFEFE] border-b border-[#E8E7E1] shadow-sm z-50"
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
@@ -134,9 +148,10 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
               <ArrowLeft className="w-5 h-5" />
             </motion.button>
 
-            <h2 
-              className="text-2xl font-light text-[#2D3E50]"
+            <h2
+              className="text-2xl font-light text-[#2D3E50] cursor-pointer hover:opacity-80"
               style={{ fontFamily: "'Fraunces', serif" }}
+              onClick={() => navigate("/")}
             >
               Apex
             </h2>
@@ -170,42 +185,47 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={{ duration: 0.15, delay: 0.05 }}
           className="text-sm text-[#6B7280] mb-6"
           style={{ fontFamily: "'Manrope', sans-serif" }}
-        >
-          {results.length > 0 
-            ? `About ${results.length} results` 
-            : 'No results found'}
-        </motion.div>
+        ></motion.div>
 
         <div className="space-y-8">
           {results.map((result, index) => {
-            const doc = documents.get(result.documentId);
-            if (!doc) return null;
+            // Results now include full document data directly
+            if (!result.url) return null;
 
             return (
               <motion.article
                 key={result.documentId}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.1 + index * 0.05 }}
+                transition={{ duration: 0.2, delay: 0.02 + index * 0.02 }}
                 className="group cursor-pointer"
-                onClick={() => handleResultClick(doc.url)}
+                onClick={() => handleResultClick(result.url)}
               >
-                <div className="text-sm text-[#3D5A4C] mb-1" 
-                     style={{ fontFamily: "'Manrope', sans-serif" }}>
-                  {formatUrl(doc.url)}
+                <div
+                  className="text-sm text-[#3D5A4C] mb-1"
+                  style={{ fontFamily: "'Manrope', sans-serif" }}
+                >
+                  {formatUrl(result.url)}
                 </div>
-                <h3 className="text-xl text-[#2D3E50] mb-2 
+                <h3
+                  className="text-xl text-[#2D3E50] mb-2 
                              group-hover:underline
                              transition-all duration-200"
-                    style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}>
-                  {doc.title}
+                  style={{
+                    fontFamily: "'Manrope', sans-serif",
+                    fontWeight: 500,
+                  }}
+                >
+                  {result.title}
                 </h3>
-                <p className="text-[#4B5563] leading-relaxed"
-                   style={{ fontFamily: "'Manrope', sans-serif" }}>
-                  {generateSnippet(doc.content, initialQuery)}
+                <p
+                  className="text-[#4B5563] leading-relaxed"
+                  style={{ fontFamily: "'Manrope', sans-serif" }}
+                >
+                  {generateSnippet(result.content, initialQuery)}
                 </p>
               </motion.article>
             );
@@ -218,10 +238,16 @@ export default function SearchResults({ initialQuery, onBack, onSearch, results,
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <p className="text-[#6B7280]" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <p
+              className="text-[#6B7280]"
+              style={{ fontFamily: "'Manrope', sans-serif" }}
+            >
               No results found for "{initialQuery}"
             </p>
-            <p className="text-[#9CA3AF] text-sm mt-2" style={{ fontFamily: "'Manrope', sans-serif" }}>
+            <p
+              className="text-[#9CA3AF] text-sm mt-2"
+              style={{ fontFamily: "'Manrope', sans-serif" }}
+            >
               Try scraping some websites first using the API
             </p>
           </motion.div>

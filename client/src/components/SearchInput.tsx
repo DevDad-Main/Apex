@@ -84,7 +84,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+      transition={{ duration: 0.3, delay: 0.1, ease: 'easeOut' }}
       className="relative w-full max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="relative">
@@ -132,13 +132,11 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
           
           <motion.button
             type="submit"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="absolute right-3 top-1/2 -translate-y-1/3
+            className="absolute right-3 top-1/2 -translate-y-1/2
                      w-10 h-10 rounded-full
                      bg-[#2D3E50] text-white
                      flex items-center justify-center
-                     transition-all duration-200
+                     transition-transform duration-150 hover:scale-105 active:scale-95
                      hover:bg-[#3d5264]
                      shadow-sm"
           >
