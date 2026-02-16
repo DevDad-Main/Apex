@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const API_BASE = "/apex";
+const API_BASE = import.meta.env.VITE_API_URL || "";
+
+const apiClient = axios.create({
+  baseURL: `${API_BASE}/apex`,
+});
 
 export interface SearchResult {
   documentId: string;
@@ -44,29 +48,29 @@ export interface AutocompleteResponse {
 
 const api = {
   search: async (query: string): Promise<SearchResult[]> => {
-    const response = await axios.get<SearchResponse>(`${API_BASE}/search`, {
+    const response = await apiClient.get<SearchResponse>("/search", {
       params: { query },
     });
     return response.data.data;
   },
 
   scrape: async (url: string): Promise<Document> => {
-    const response = await axios.post<DocumentResponse>(`${API_BASE}/scrape`, {
+    const response = await apiClient.post<DocumentResponse>("/scrape", {
       url,
     });
     return response.data.data;
   },
 
   getDocument: async (id: string): Promise<Document> => {
-    const response = await axios.get<DocumentResponse>(
-      `${API_BASE}/document/${id}`,
+    const response = await apiClient.get<DocumentResponse>(
+      `/document/${id}`,
     );
     return response.data.data;
   },
 
   getAllDocuments: async (): Promise<Document[]> => {
-    const response = await axios.get<DocumentsListResponse>(
-      `${API_BASE}/document`,
+    const response = await apiClient.get<DocumentsListResponse>(
+      "/document",
     );
 
     console.log(`Documents DATA: `, response.data.data);
@@ -74,8 +78,8 @@ const api = {
   },
 
   autocomplete: async (query: string): Promise<string[]> => {
-    const response = await axios.get<AutocompleteResponse>(
-      `${API_BASE}/autocomplete`,
+    const response = await apiClient.get<AutocompleteResponse>(
+      "/autocomplete",
       {
         params: { q: query },
       },

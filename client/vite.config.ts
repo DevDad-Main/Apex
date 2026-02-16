@@ -24,7 +24,7 @@ export default defineConfig({
     host: process.env.TEMPO === "true" ? "0.0.0.0" : undefined,
     proxy: {
       "/apex": {
-        target: "http://localhost:3000", // Change from 8000 to 3000
+        target: process.env.VITE_BACKEND, // Change from 8000 to 3000
         changeOrigin: true,
       },
     },
