@@ -1,3 +1,4 @@
+import { searchService } from "@/services/searchService.js";
 import { invertedIndex } from "../index/invertedIndex.js";
 import {
   catchAsync,
@@ -22,7 +23,8 @@ searchRouter.get(
       return sendError(res, "Invalid query.", 400);
     }
 
-    const results = invertedIndex.search(query as string);
+    // const results = invertedIndex.search(query as string);
+    const results = await searchService.search(query as string);
 
     if (results.length === 0) {
       return sendSuccess(res, {}, "No results found for this query.", 200);
@@ -31,9 +33,9 @@ searchRouter.get(
       res,
       results,
       "Successfully found searches for query",
-      200
+      200,
     );
-  })
+  }),
 );
 
 export default searchRouter;

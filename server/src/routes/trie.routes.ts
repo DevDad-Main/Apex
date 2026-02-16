@@ -1,9 +1,6 @@
+import { searchService } from "@/services/searchService.js";
 import { trie } from "../autocomplete/trie.js";
-import {
-  catchAsync,
-  sendError,
-  sendSuccess,
-} from "devdad-express-utils";
+import { catchAsync, sendError, sendSuccess } from "devdad-express-utils";
 import { Router } from "express";
 
 const router = Router();
@@ -17,15 +14,17 @@ router.get(
       return sendError(res, "Query parameter 'q' is required.", 400);
     }
 
-    const suggestions = trie.getSuggestions(q.toLowerCase(), 10);
+    // const suggestions = trie.getSuggestions(q.toLowerCase(), 10);
+    const suggestions = await searchService.autocomplete(q.toLowerCase(), 10);
 
     return sendSuccess(
       res,
       suggestions,
       "Autocomplete suggestions retrieved successfully.",
-      200
+      200,
     );
-  })
+  }),
 );
 
 export default router;
+

@@ -11,7 +11,7 @@ const DATA_DIR = path.join(__dirname, "../../data");
 const DATA_FILE = path.join(DATA_DIR, "scraped-pages.json");
 
 interface StoredData {
-  document: any;
+  documents: any[];
 }
 
 /**
@@ -24,7 +24,7 @@ function ensureDir(): void {
 }
 
 /**
- * Load documents from JSON file.
+ * Load documents from JSON file (local fallback)
  */
 export function loadDocuments(): any[] {
   ensureDir();
@@ -38,7 +38,7 @@ export function loadDocuments(): any[] {
 }
 
 /**
- * Save documents to JSON file.
+ * Save documents to JSON file (local fallback)
  */
 export function saveDocuments(documents: any[]): void {
   ensureDir();
@@ -46,48 +46,47 @@ export function saveDocuments(documents: any[]): void {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+/**
+ * Save documents to MongoDB with deduplication by URL
+ */
 export async function saveDocumentsToCloud(): Promise<void> {
-  const data: any = loadDocuments();
+  const data = loadDocuments();
 
-  // De-duplicate by URL using Map
+  // Deduplicate by URL using Map
   const uniqueDocs = new Map<string, any>();
 
   for (const doc of data) {
-    // Key by URL - automatically overwrites duplicates
     if (doc.url) {
       uniqueDocs.set(doc.url, doc);
     }
   }
 
-  logger.info(`Unique documents after de-duplication: ${uniqueDocs.size}`);
+  logger.info(`Unique documents after deduplication: ${uniqueDocs.size}`);
 
   try {
-    // Convert Map values to array and insert
     const documents = Array.from(uniqueDocs.values());
 
     for (const doc of documents) {
       await Document.findOneAndUpdate(
-        { url: doc.url }, // Match by URL
-        { $set: doc }, // Update data
-        { upsert: true, returnDocument: "after" }, // Create if not exists
+        { url: doc.url },
+        { $set: doc },
+        { upsert: true, returnDocument: "after" }
       );
-      // await Document.create({
-      //   title: doc.title,
-      //   content: doc.content,
-      //   url: doc.url,
-      //   scrapedAt: doc.scrapedAt ?? Date.now(),
-      // });
     }
-    logger.info(`Successfully inserted ${documents.length} documents`);
+
+    logger.info(`Successfully saved ${documents.length} documents to MongoDB`);
   } catch (error: any) {
-    logger.error("Failed to insert document..", { error });
+    logger.error("Failed to save documents to MongoDB", { error });
     throw error;
   }
 }
 
-export async function loadDocumentsFromCloud(): Promise<Document[]> {
+/**
+ * Load documents from MongoDB
+ */
+export async function loadDocumentsFromCloud(): Promise<any[]> {
   try {
-    logger.info(`Fetching documents from cloud..`);
+    logger.info(`Fetching documents from MongoDB...`);
     const documents = await Document.find({}).lean();
     logger.info(`Successfully fetched ${documents.length} documents`);
 
@@ -98,7 +97,7 @@ export async function loadDocumentsFromCloud(): Promise<Document[]> {
       content: doc.content,
     }));
   } catch (error) {
-    logger.error(`Faild to fetch documents..`, { error });
+    logger.error(`Failed to fetch documents from MongoDB`, { error });
     throw error;
   }
 }

@@ -66,6 +66,7 @@ function Home() {
       <SearchResults 
         initialQuery={searchQuery} 
         onBack={handleBack}
+        onSearch={handleSearch}
         results={searchResults}
         documents={documents}
         loading={loading}

@@ -6,16 +6,20 @@ import { SearchResult, Document } from '../lib/api';
 interface SearchResultsProps {
   initialQuery: string;
   onBack: () => void;
+  onSearch: (query: string) => void;
   results: SearchResult[];
   documents: Map<string, Document>;
   loading: boolean;
 }
 
-export default function SearchResults({ initialQuery, onBack, results, documents, loading }: SearchResultsProps) {
+export default function SearchResults({ initialQuery, onBack, onSearch, results, documents, loading }: SearchResultsProps) {
   const [query, setQuery] = useState(initialQuery);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (query.trim()) {
+      onSearch(query);
+    }
   };
 
   const handleResultClick = (url: string) => {
