@@ -88,6 +88,13 @@ const api = {
     );
     return response.data.data;
   },
+
+  getRandom: async (limit = 10): Promise<SearchResponse> => {
+    const response = await apiClient.get<{ success: boolean; data: SearchResponse; message: string }>("/search/random", {
+      params: { limit },
+    });
+    return response.data.data;
+  },
 };
 
 export default api;

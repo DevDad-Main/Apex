@@ -274,6 +274,12 @@ class InvertedIndex {
   getAllDocuments(): Map<string, Document> {
     return this.documents;
   }
+
+  getRandomDocuments(count: number): Document[] {
+    const docs = Array.from(this.documents.values());
+    const shuffled = docs.sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  }
   //#endregion
 
   //#region Scrape And Index

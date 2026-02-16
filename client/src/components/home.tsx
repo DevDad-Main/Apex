@@ -62,16 +62,22 @@ function Home() {
     }
   }, [searchParams, location.pathname]);
 
-  const handleLuckyClick = () => {
-    const luckyQueries = [
-      'amazing travel destinations',
-      'innovative technology trends',
-      'delicious recipes',
-      'inspiring art galleries',
-      'fascinating science discoveries'
-    ];
-    const randomQuery = luckyQueries[Math.floor(Math.random() * luckyQueries.length)];
-    handleSearch(randomQuery);
+  const handleLuckyClick = async () => {
+    setLoading(true);
+    setSearchQuery('Random');
+    
+    try {
+      const response = await api.getRandom(10);
+      setSearchResults(response.results);
+      setPagination(response.pagination);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Random search failed:', error);
+      setSearchResults([]);
+      setPagination(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBack = () => {

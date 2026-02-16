@@ -44,4 +44,23 @@ searchRouter.get(
   }),
 );
 
+searchRouter.get(
+  "/random",
+  catchAsync(async (req, res, next) => {
+    const { limit } = req.query;
+    const limitNum = limit ? parseInt(limit as string, 10) : 10;
+
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+
+    const results = await searchService.getRandom(limitNum);
+
+    return sendSuccess(
+      res,
+      { results, pagination: { total: results.length, page: 1, limit: limitNum, totalPages: 1 } },
+      "Random results",
+      200,
+    );
+  }),
+);
+
 export default searchRouter;

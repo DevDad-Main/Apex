@@ -61,6 +61,17 @@ class SearchService {
   async autocomplete(query: string, limit = 10) {
     return trie.getSuggestions(query, limit);
   }
+
+  async getRandom(limit = 10) {
+    const docs = invertedIndex.getRandomDocuments(limit);
+    return docs.map((doc) => ({
+      documentId: doc.id,
+      score: 0,
+      title: doc.title,
+      url: doc.url,
+      content: doc.content,
+    }));
+  }
 }
 
 export const searchService = new SearchService();
