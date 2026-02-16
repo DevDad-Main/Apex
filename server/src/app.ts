@@ -1,5 +1,5 @@
 import { errorHandler, logger, sendSuccess } from "devdad-express-utils";
-import express from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import searchRouter from "./routes/search.routes.js";
 import scrapeRouter from "./routes/scrape.routes.js";
@@ -13,10 +13,11 @@ const app = express();
 
 const allowedOrigins =
   process.env.ALLOWED_ORIGINS?.split(",") || "http://localhost:5173";
+
 // Custom mongo-sanitize middleware for Express 5 compatibility
 const mongoSanitize = () => {
-  return (req, res, next) => {
-    const sanitize = (obj) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const sanitize = (obj: unknown): unknown => {
       if (typeof obj !== "object" || obj === null) {
         return obj;
       }
@@ -25,7 +26,7 @@ const mongoSanitize = () => {
         return obj.map(sanitize);
       }
 
-      const sanitized = {};
+      const sanitized: Record<string, unknown> = {};
       for (const key in obj) {
         // Skip prototype properties
         if (!Object.prototype.hasOwnProperty.call(obj, key)) continue;
@@ -36,7 +37,7 @@ const mongoSanitize = () => {
           continue;
         }
 
-        sanitized[key] = sanitize(obj[key]);
+        sanitized[key] = sanitize((obj as Record<string, unknown>)[key]);
       }
 
       return sanitized;
@@ -47,16 +48,14 @@ const mongoSanitize = () => {
       req.body = sanitize(req.body);
     }
 
-    // In Express 5, req.query and req.params are read-only, so we skip sanitizing them
-    // Focus on request body which is the main vector for NoSQL injection
-
     next();
   };
 };
+
 // Custom XSS protection middleware for Express 5 compatibility
 const xss = () => {
-  return (req, res, next) => {
-    const cleanXSS = (obj) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const cleanXSS = (obj: unknown): unknown => {
       if (typeof obj === "string") {
         // Basic XSS protection - escape HTML entities
         return obj
@@ -76,10 +75,10 @@ const xss = () => {
         return obj.map(cleanXSS);
       }
 
-      const cleaned = {};
+      const cleaned: Record<string, unknown> = {};
       for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          cleaned[key] = cleanXSS(obj[key]);
+          cleaned[key] = cleanXSS((obj as Record<string, unknown>)[key]);
         }
       }
 
@@ -149,7 +148,7 @@ app.use("/apex/scrape", scrapeRouter);
 app.use("/apex/document", documentsRouter);
 app.use("/apex/autocomplete", autocompleteRouter);
 
-app.use("/", (req, res, next) => {
+app.use("/", (req: Request, res: Response) => {
   return sendSuccess(res, {}, "Server is up and running!");
 });
 
