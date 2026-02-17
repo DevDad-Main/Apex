@@ -1,7 +1,5 @@
 import * as fs from "fs";
-import { PrismaClient } from "../generated/client/index.js";
-import { PrismaPg } from "@prisma/adapter-pg";
-import pg from "pg";
+import { PrismaClient } from "@prisma/client";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "devdad-express-utils";
@@ -12,14 +10,7 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, "../../data");
 const DATA_FILE = path.join(DATA_DIR, "scraped-pages.json");
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set");
-}
-
-const pool = new pg.Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-export const prisma = new PrismaClient({ adapter });
+export const prisma = new PrismaClient();
 
 interface StoredData {
   documents: any[];
