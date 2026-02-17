@@ -1,5 +1,7 @@
 import * as fs from "fs";
-import { Document } from "../models/Document.model.js";
+import { PrismaClient } from "../generated/client/index.js";
+import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "devdad-express-utils";
@@ -10,22 +12,25 @@ const __dirname = path.dirname(__filename);
 const DATA_DIR = path.join(__dirname, "../../data");
 const DATA_FILE = path.join(DATA_DIR, "scraped-pages.json");
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
+
+const pool = new pg.Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+export const prisma = new PrismaClient({ adapter });
+
 interface StoredData {
   documents: any[];
 }
 
-/**
- * Ensures data directory exists before I/O operations
- */
 function ensureDir(): void {
   if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
   }
 }
 
-/**
- * Load documents from JSON file (local fallback)
- */
 export function loadDocuments(): any[] {
   ensureDir();
 
@@ -37,22 +42,15 @@ export function loadDocuments(): any[] {
   return data.documents || [];
 }
 
-/**
- * Save documents to JSON file (local fallback)
- */
 export function saveDocuments(documents: any[]): void {
   ensureDir();
   const data: StoredData = { documents };
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
-/**
- * Save documents to MongoDB with deduplication by URL
- */
 export async function saveDocumentsToCloud(): Promise<void> {
   const data = loadDocuments();
 
-  // Deduplicate by URL using Map
   const uniqueDocs = new Map<string, any>();
 
   for (const doc of data) {
@@ -67,37 +65,45 @@ export async function saveDocumentsToCloud(): Promise<void> {
     const documents = Array.from(uniqueDocs.values());
 
     for (const doc of documents) {
-      await Document.findOneAndUpdate(
-        { url: doc.url },
-        { $set: doc },
-        { upsert: true, returnDocument: "after" },
-      );
+      await prisma.document.upsert({
+        where: { url: doc.url },
+        update: {
+          title: doc.title,
+          content: doc.content,
+          scrapedAt: doc.scrapedAt ? new Date(doc.scrapedAt) : new Date(),
+        },
+        create: {
+          title: doc.title,
+          content: doc.content,
+          url: doc.url,
+          scrapedAt: doc.scrapedAt ? new Date(doc.scrapedAt) : new Date(),
+        },
+      });
     }
 
-    logger.info(`Successfully saved ${documents.length} documents to MongoDB`);
+    logger.info(`Successfully saved ${documents.length} documents to PostgreSQL`);
   } catch (error: any) {
-    logger.error("Failed to save documents to MongoDB", { error });
+    logger.error("Failed to save documents to PostgreSQL", { error });
     throw error;
   }
 }
 
-/**
- * Load documents from MongoDB
- */
 export async function loadDocumentsFromCloud(): Promise<any[]> {
   try {
-    logger.info(`Fetching documents from MongoDB...`);
-    const documents = await Document.find({}).lean();
+    logger.info(`Fetching documents from PostgreSQL...`);
+    const documents = await prisma.document.findMany({
+      orderBy: { createdAt: "desc" },
+    });
     logger.info(`Successfully fetched ${documents.length} documents`);
 
     return documents.map((doc) => ({
-      id: doc._id.toString(),
+      id: doc.id,
       url: doc.url,
       title: doc.title,
       content: doc.content,
     }));
   } catch (error) {
-    logger.error(`Failed to fetch documents from MongoDB`, { error });
+    logger.error(`Failed to fetch documents from PostgreSQL`, { error });
     throw error;
   }
 }

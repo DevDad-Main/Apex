@@ -27,7 +27,7 @@
  * @module autocomplete/trie
  */
 
-import { extractPhases } from "@/textProcessor/tokenizer.js";
+import { extractPhrases } from "@/textProcessor/tokenizer.js";
 
 /**
  * Represents a single node in the Trie.

@@ -1,21 +1,20 @@
 import "dotenv/config";
-import { connectDB, getDBStatus, logger } from "devdad-express-utils";
+import { logger } from "devdad-express-utils";
 import app from "./app.js";
 import { invertedIndex } from "./index/invertedIndex.js";
-import { loadDocumentsFromCloud } from "./scraper/persistence.js";
+import { loadDocumentsFromCloud, prisma } from "./scraper/persistence.js";
 import { trie } from "./autocomplete/trie.js";
 import tokenizer, { extractPhrases } from "./textProcessor/tokenizer.js";
 import { initializeRedisClient } from "./utils/redis.utils.js";
-import { findClosestTerm } from "./utils/levenshtein.utils.js";
 
-await connectDB();
+await prisma.$connect();
+logger.info("Connected to PostgreSQL");
 
 const PORT = process.env.PORT || 8000;
-const dbStatus = getDBStatus();
 
 (async () => {
   try {
-    // Load documents from MongoDB
+    // Load documents from PostgreSQL
     const docs = await loadDocumentsFromCloud();
     logger.info(`Loading ${docs.length} documents into search index...`);
 
@@ -44,15 +43,16 @@ const dbStatus = getDBStatus();
     // Start the server
     app.listen(PORT, () => {
       logger.info(`🚀 Apex search engine running on port ${PORT}`);
-      logger.info(`📊 Database status: `, { dbStatus });
+      logger.info(`📊 Database: PostgreSQL (Neon)`);
     });
 
     // logger.info("Find closes term using levenshtein..");
     // logger.info(`Levenshtein result is...${findClosestTerm("pythn")}`);
 
     // Graceful shutdown
-    process.on("SIGTERM", () => {
+    process.on("SIGTERM", async () => {
       logger.info("SIGTERM received, shutting down gracefully");
+      await prisma.$disconnect();
       process.exit(0);
     });
   } catch (error) {

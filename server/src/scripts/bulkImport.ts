@@ -4,14 +4,15 @@
  * This script fetches 100+ Wikipedia articles across multiple categories
  * and adds them to the inverted index and persistence.
  * 
- * Usage: npx ts-node src/scripts/bulkImport.ts
+ * Usage: npx tsx src/scripts/bulkImport.ts
  * 
  * @module scripts/bulkImport
  */
 
+import "dotenv/config";
 import { v4 as uuidv4 } from "uuid";
 import { invertedIndex } from "../index/invertedIndex.js";
-import { loadDocuments, saveDocuments } from "../scraper/persistence.js";
+import { loadDocuments, saveDocuments, saveDocumentsToCloud } from "../scraper/persistence.js";
 import { trie } from "../autocomplete/trie.js";
 import tokenizer, { extractPhrases } from "../textProcessor/tokenizer.js";
 
@@ -171,6 +172,258 @@ const TOPICS = {
     "Astronomy",
     "Neuroscience",
     "Climate_change"
+  ],
+
+  // History (10)
+  history: [
+    "World_War_II",
+    "World_War_I",
+    "French_Revolution",
+    "Roman_Empire",
+    "Ancient_Egypt",
+    "Industrial_Revolution",
+    "Renaissance",
+    "Cold_War",
+    "American_Revolution",
+    "Middle_Ages"
+  ],
+
+  // Geography (10)
+  geography: [
+    "Europe",
+    "Asia",
+    "Africa",
+    "North_America",
+    "South_America",
+    "Australia",
+    "Antarctica",
+    "Amazon_rainforest",
+    "Mount_Everest",
+    "Pacific_Ocean"
+  ],
+
+  // Sports (10)
+  sports: [
+    "Football",
+    "Basketball",
+    "Baseball",
+    "Soccer",
+    "Tennis",
+    "Olympic_Games",
+    "Cricket",
+    "Golf",
+    "Swimming",
+    "Marathon"
+  ],
+
+  // Health & Medicine (10)
+  health: [
+    "Human_heart",
+    "COVID-19",
+    "Vaccine",
+    "Cancer",
+    "Diabetes",
+    "Mental_health",
+    "Brain",
+    "Immune_system",
+    "Antibiotic",
+    "Human_genome"
+  ],
+
+  // Finance & Economics (10)
+  finance: [
+    "Stock_market",
+    "Bitcoin",
+    "Cryptocurrency",
+    "Inflation",
+    "Gross_Domestic_Product",
+    "Federal_Reserve",
+    "International_Monetary_Fund",
+    "World_Bank",
+    "Investment_banking",
+    "Financial_crisis_of_2008"
+  ],
+
+  // Philosophy (10)
+  philosophy: [
+    "Philosophy",
+    "Existentialism",
+    "Stoicism",
+    "Karl_Marx",
+    "Immanuel_Kant",
+    "Plato",
+    "Aristotle",
+    "Friedrich_Nietzsche",
+    "Jean-Paul_Sartre",
+    "Logic"
+  ],
+
+  // Psychology (10)
+  psychology: [
+    "Psychology",
+    "Cognitive_psychology",
+    "Behavioral_psychology",
+    "Freud",
+    "Mental_disorder",
+    "Depression",
+    "Anxiety",
+    "Intelligence",
+    "Memory",
+    "Consciousness"
+  ],
+
+  // Literature (10)
+  literature: [
+    "William_Shakespeare",
+    "Jane_Austen",
+    "Harry_Potter",
+    "The_Lord_of_the_Rings",
+    "Don_Quixote",
+    "War_and_Peace",
+    "One_Thousand_and_One_Nights",
+    "Divine_Comedy",
+    "The_Bible",
+    "Mahabharata"
+  ],
+
+  // Art & Culture (10)
+  art: [
+    "Leonardo_da_Vinci",
+    "Pablo_Picasso",
+    "Vincent_van_Gogh",
+    "Mona_Lisa",
+    "The_Starry_Night",
+    "Graffiti",
+    "Photography",
+    "Sculpture",
+    "Renaissance_art",
+    "Modern_art"
+  ],
+
+  // Politics & Government (10)
+  politics: [
+    "Democracy",
+    "Republicanism",
+    "Monarchy",
+    "Communism",
+    "Liberalism",
+    "Conservatism",
+    "United_Nations",
+    "European_Union",
+    "NATO",
+    "Constitutional_law"
+  ],
+
+  // Business & Entrepreneurship (10)
+  business: [
+    "Business",
+    "Entrepreneurship",
+    "Startup_company",
+    "Venture_capital",
+    "Business_model",
+    "Marketing",
+    "Supply_chain",
+    "Project_management",
+    "Strategic_management",
+    "Mergers_and_acquisitions"
+  ],
+
+  // Gaming (10)
+  gaming: [
+    "Video_game",
+    "Minecraft",
+    "Fortnite",
+    "League_of_Legends",
+    "Chess",
+    "Poker",
+    "Virtual_reality",
+    "Esports",
+    "Game_design",
+    "Console_gaming"
+  ],
+
+  // Food & Cooking (10)
+  food: [
+    "Cuisine",
+    "Italian_cuisine",
+    "Chinese_cuisine",
+    "French_cuisine",
+    "Sushi",
+    "Pizza",
+    "Bread",
+    "Wine",
+    "Coffee",
+    "Tea"
+  ],
+
+  // Travel (10)
+  travel: [
+    "Tourism",
+    "Paris",
+    "New_York_City",
+    "Tokyo",
+    "London",
+    "Rome",
+    "Sydney_Opera_House",
+    "Great_Wall_of_China",
+    "Machu_Picchu",
+    "Taj_Mahal"
+  ],
+
+  // Music (10)
+  music: [
+    "Music",
+    "Jazz",
+    "Rock_music",
+    "Classical_music",
+    "Hip_hop",
+    "Electronic_dance_music",
+    "Mozart",
+    "The_Beatles",
+    "Bach",
+    "Ludwig_van_Beethoven"
+  ],
+
+  // Movies & Television (10)
+  movies: [
+    "Film",
+    "The_Godfather",
+    "Star_Wars",
+    "Marvel_Cinematic_Universe",
+    "Netflix",
+    "Academy_Award",
+    "Documentary",
+    "Animation",
+    "Horror_film",
+    "Science_fiction_film"
+  ],
+
+  // Social Media & Internet (10)
+  internet: [
+    "Social_media",
+    "Facebook",
+    "Twitter",
+    "Instagram",
+    "YouTube",
+    "TikTok",
+    "Internet",
+    "Email",
+    "Online_shopping",
+    "E-commerce"
+  ],
+
+  // Law (10)
+  law: [
+    "Law",
+    "Criminal_law",
+    "Contract_law",
+    "International_law",
+    "Human_rights",
+    "Civil_law",
+    "Common_law",
+    "Constitutional_law",
+    "Corporate_law",
+    "Patent"
   ]
 };
 
@@ -192,7 +445,23 @@ async function fetchWikipediaArticle(title: string): Promise<{ title: string; co
   const url = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${title}&format=json&origin=*`;
   
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "ApexSearchEngine/1.0 (https://github.com/your-repo; contact@example.com) WikipediaBot/1.0"
+      }
+    });
+    
+    if (!response.ok) {
+      console.log(`  ⚠️  API error for ${title}: ${response.status}`);
+      return null;
+    }
+    
+    const contentType = response.headers.get("content-type");
+    if (!contentType?.includes("application/json")) {
+      console.log(`  ⚠️  Non-JSON response for ${title}`);
+      return null;
+    }
+    
     const data = await response.json() as { query?: { pages: Record<string, { title: string; extract?: string }> } };
     
     const pages = data.query?.pages;
@@ -267,12 +536,16 @@ async function bulkImport() {
     }
     
     // Small delay to be nice to Wikipedia's servers
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => setTimeout(resolve, 200));
   }
   
   // Save all documents to persistence
   console.log("\n💾 Saving to persistence...");
   saveDocuments(existingDocs);
+  
+  // Save to PostgreSQL
+  console.log("💾 Saving to PostgreSQL...");
+  await saveDocumentsToCloud();
   
   // Rebuild Trie with all documents
   console.log("🌳 Building autocomplete Trie...");

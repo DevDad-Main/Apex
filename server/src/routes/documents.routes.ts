@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { invertedIndex } from "../index/invertedIndex.js";
+import { prisma } from "../scraper/persistence.js";
 import { catchAsync, sendError, sendSuccess } from "devdad-express-utils";
 
 const documentsRouter = Router();
@@ -34,6 +35,14 @@ documentsRouter.get(
       "Documents retrieved successfully.",
       200,
     );
+  }),
+);
+
+documentsRouter.delete(
+  "/",
+  catchAsync(async (req, res, next) => {
+    await prisma.document.deleteMany({});
+    return sendSuccess(res, {}, "All documents deleted successfully.", 200);
   }),
 );
 
