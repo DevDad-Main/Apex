@@ -1,5 +1,5 @@
 import * as fs from "fs";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "../lib/prisma.js";
 import * as path from "path";
 import { fileURLToPath } from "url";
 import { logger } from "devdad-express-utils";
@@ -9,8 +9,6 @@ const __dirname = path.dirname(__filename);
 
 const DATA_DIR = path.join(__dirname, "../../data");
 const DATA_FILE = path.join(DATA_DIR, "scraped-pages.json");
-
-export const prisma = new PrismaClient();
 
 interface StoredData {
   documents: any[];

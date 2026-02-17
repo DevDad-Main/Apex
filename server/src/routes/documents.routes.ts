@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { invertedIndex } from "../index/invertedIndex.js";
-import { prisma } from "../scraper/persistence.js";
+import { prisma } from "../lib/prisma.js";
 import { catchAsync, sendError, sendSuccess } from "devdad-express-utils";
 
 const documentsRouter = Router();
