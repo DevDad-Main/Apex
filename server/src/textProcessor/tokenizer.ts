@@ -23,8 +23,12 @@
  * // Returns: ["hello", "world", "hows", "it", "going"]
  */
 export default function tokenizer(input: string): string[] {
+  // Remove apostrophies
   const output = input.replace(/'/g, "");
-  return output.toLowerCase().match(/[a-zA-Z]+/g) || [];
+  // return output.toLowerCase().match(/[a-zA-Z]+/g) || [];
+  const matches = output.toLowerCase().match(/[a-zA-Z0-9+#.]+/g) || [];
+  // Filter out single characters
+  return matches.filter((word) => word.length > 1);
 }
 
 export function extractPhrases(text: string): string[] {
@@ -32,8 +36,8 @@ export function extractPhrases(text: string): string[] {
   const phrases: string[] = [];
 
   for (let i = 0; i < words.length - 1; i++) {
-    const cleanWord1 = words[i].replace(/[^a-zA-Z]/g, "");
-    const cleanWord2 = words[i + 1].replace(/[^a-zA-Z]/g, "");
+    const cleanWord1 = words[i].replace(/[^a-zA-Z0-9+#.]/g, "");
+    const cleanWord2 = words[i + 1].replace(/[^a-zA-Z0-9+#.]/g, "");
     if (cleanWord1.length > 2 && cleanWord2.length > 2) {
       phrases.push(`${cleanWord1} ${cleanWord2}`);
     }
