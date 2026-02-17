@@ -107,7 +107,7 @@ function Home() {
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-white overflow-x-hidden">
+    <div className="relative min-h-screen w-full bg-white dark:bg-[#0F1115] overflow-x-hidden">
       {/* Main content */}
       <div className="relative w-full min-h-screen flex flex-col items-center justify-center px-6">
         <SearchLogo />

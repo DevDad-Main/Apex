@@ -161,8 +161,9 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             placeholder="Search the web..."
             className={`
               w-full h-[68px] px-7 pr-16
-              bg-[#FEFEFE] 
-              text-[#2D3E50] text-lg
+              bg-[#FEFEFE] dark:bg-[#1A1D24]
+              text-[#2D3E50] dark:text-white text-lg
+              placeholder:text-[#9CA3AF]
               rounded-2xl
               border-0
               outline-none
@@ -180,10 +181,10 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             type="submit"
             className="absolute right-3 top-1/2 -translate-y-1/2
                      w-10 h-10 rounded-full
-                     bg-[#2D3E50] text-white
+                     bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115]
                      flex items-center justify-center
                      transition-transform duration-150 hover:scale-105 active:scale-95
-                     hover:bg-[#3d5264]
+                     hover:bg-[#3d5264] dark:hover:bg-[#E8E7E1]
                      shadow-sm"
           >
             <Search className="w-5 h-5" />
@@ -197,7 +198,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="absolute top-[calc(100%+8px)] left-0 right-0
-                     bg-[#FEFEFE] rounded-2xl
+                     bg-[#FEFEFE] dark:bg-[#1A1D24] rounded-2xl
                      shadow-[0_4px_20px_rgba(45,62,80,0.12)]
                      overflow-hidden z-50"
           >
@@ -205,7 +206,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             {query.length > 0 && (
               <>
                 {loadingSuggestions ? (
-                  <div className="px-7 py-4 text-[#6B7280] text-sm">
+                  <div className="px-7 py-4 text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                     Loading...
                   </div>
                 ) : suggestions.length > 0 ? (
@@ -217,13 +218,13 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                       onClick={() => handleSuggestionClick(suggestion)}
                       className={`
                         w-full px-7 py-4 text-left
-                        text-[#2D3E50] text-base
+                        text-[#2D3E50] dark:text-white text-base
                         transition-colors duration-150
                         ${selectedIndex === index 
-                          ? 'bg-[#F5F5F3]' 
-                          : 'hover:bg-[#F8F7F4]'
+                          ? 'bg-[#F5F5F3] dark:bg-[#2A2D35]' 
+                          : 'hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]'
                         }
-                        ${index !== 0 ? 'border-t border-[#F0EFE9]' : ''}
+                        ${index !== 0 ? 'border-t border-[#F0EFE9] dark:border-[#2A2D35]' : ''}
                       `}
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
@@ -238,7 +239,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             {/* Show history if no query or no autocomplete results */}
             {query.length === 0 && history.length > 0 && (
               <>
-                <div className="flex items-center justify-between px-7 py-3 border-b border-[#F0EFE9]">
+                <div className="flex items-center justify-between px-7 py-3 border-b border-[#F0EFE9] dark:border-[#2A2D35]">
                   <span className="text-xs text-[#9CA3AF] uppercase tracking-wide" style={{ fontFamily: "'Manrope', sans-serif" }}>
                     Recent searches
                   </span>
@@ -246,7 +247,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                       type="button"
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={handleClearHistory}
-                      className="text-xs text-[#6B7280] hover:text-[#2D3E50] transition-colors"
+                      className="text-xs text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#2D3E50] dark:hover:text-white transition-colors"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                     Clear all
@@ -257,10 +258,10 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                     key={item.query}
                     className={`
                       flex items-center justify-between px-7 py-3
-                      text-[#2D3E50] text-base
-                      hover:bg-[#F8F7F4]
+                      text-[#2D3E50] dark:text-white text-base
+                      hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]
                       transition-colors duration-150 cursor-pointer
-                      ${index !== 0 ? 'border-t border-[#F0EFE9]' : ''}
+                      ${index !== 0 ? 'border-t border-[#F0EFE9] dark:border-[#2A2D35]' : ''}
                     `}
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                     onMouseDown={(e) => e.preventDefault()}
@@ -274,7 +275,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                       type="button"
                       onMouseDown={(e) => e.stopPropagation()}
                       onClick={(e) => handleDeleteHistory(e, item.query)}
-                      className="text-[#9CA3AF] hover:text-[#2D3E50] transition-colors p-1"
+                      className="text-[#9CA3AF] hover:text-[#2D3E50] dark:hover:text-white transition-colors p-1"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -285,7 +286,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
 
             {/* Empty state for history */}
             {query.length === 0 && history.length === 0 && (
-              <div className="px-7 py-4 text-[#6B7280] text-sm">
+              <div className="px-7 py-4 text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                 No recent searches
               </div>
             )}

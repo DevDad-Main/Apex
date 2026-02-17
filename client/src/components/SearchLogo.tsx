@@ -9,7 +9,7 @@ export default function SearchLogo() {
       className="mb-20"
     >
       <h1 
-        className="text-6xl font-light tracking-tight text-[#2D3E50]"
+        className="text-6xl font-light tracking-tight text-[#2D3E50] dark:text-white"
         style={{ fontFamily: "'Fraunces', serif" }}
       >
         Apex

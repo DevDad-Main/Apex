@@ -1,24 +1,42 @@
 import { motion } from 'framer-motion';
-import { Search, Zap, Shield, Database, ArrowLeft } from 'lucide-react';
+import { Search, Zap, Shield, Database, ArrowLeft, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 export default function About() {
+  const { isDark, toggle } = useDarkMode();
+
+  const ThemeToggle = () => (
+    <motion.button
+      onClick={toggle}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#2D3E50] dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0"
+      style={{ fontFamily: "'Manrope', sans-serif" }}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+    </motion.button>
+  );
+
   return (
-    <div className="min-h-screen w-full bg-white">
+    <div className="min-h-screen w-full bg-white dark:bg-[#0F1115]">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="sticky top-0 bg-[#FEFEFE]/80 backdrop-blur-sm border-b border-[#E8E7E1] z-50"
+        className="sticky top-0 bg-[#FEFEFE]/80 dark:bg-[#0F1115]/80 backdrop-blur-sm border-b border-[#E8E7E1] dark:border-[#2A2D35] z-50"
       >
-        <div className="max-w-4xl mx-auto px-6 py-4">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <Link 
             to="/"
-            className="inline-flex items-center gap-2 text-[#2D3E50] hover:opacity-80 transition-opacity"
+            className="inline-flex items-center gap-2 text-[#2D3E50] dark:text-white hover:opacity-80 transition-opacity"
           >
             <ArrowLeft className="w-5 h-5" />
             <span style={{ fontFamily: "'Manrope', sans-serif" }}>Back to Search</span>
           </Link>
+          <ThemeToggle />
         </div>
       </motion.header>
 
@@ -29,14 +47,14 @@ export default function About() {
           transition={{ duration: 0.4 }}
         >
           <h1 
-            className="text-5xl font-light text-[#2D3E50] mb-4"
+            className="text-5xl font-light text-[#2D3E50] dark:text-white mb-4"
             style={{ fontFamily: "'Fraunces', serif" }}
           >
             About Apex
           </h1>
           
           <p 
-            className="text-xl text-[#6B7280] mb-12 max-w-2xl"
+            className="text-xl text-[#6B7280] dark:text-[#9CA3AF] mb-12 max-w-2xl"
             style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 300 }}
           >
             A modern, privacy-focused search engine built for speed and simplicity.
@@ -45,13 +63,13 @@ export default function About() {
           <div className="grid gap-8 mb-16">
             <section>
               <h2 
-                className="text-2xl font-light text-[#2D3E50] mb-4"
+                className="text-2xl font-light text-[#2D3E50] dark:text-white mb-4"
                 style={{ fontFamily: "'Fraunces', serif" }}
               >
                 Our Mission
               </h2>
               <p 
-                className="text-[#4B5563] leading-relaxed"
+                className="text-[#4B5563] dark:text-[#9CA3AF] leading-relaxed"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Apex was built with a simple goal: provide a fast, reliable, and 
@@ -62,22 +80,22 @@ export default function About() {
 
             <section>
               <h2 
-                className="text-2xl font-light text-[#2D3E50] mb-6"
+                className="text-2xl font-light text-[#2D3E50] dark:text-white mb-6"
                 style={{ fontFamily: "'Fraunces', serif" }}
               >
                 Key Features
               </h2>
               <div className="grid sm:grid-cols-2 gap-6">
-                <div className="bg-[#FEFEFE] p-6 rounded-2xl border border-[#E8E7E1]">
-                  <Zap className="w-8 h-8 text-[#2D3E50] mb-4" />
+                <div className="bg-[#FEFEFE] dark:bg-[#1A1D24] p-6 rounded-2xl border border-[#E8E7E1] dark:border-[#2A2D35]">
+                  <Zap className="w-8 h-8 text-[#2D3E50] dark:text-white mb-4" />
                   <h3 
-                    className="text-lg text-[#2D3E50] mb-2"
+                    className="text-lg text-[#2D3E50] dark:text-white mb-2"
                     style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}
                   >
                     Lightning Fast
                   </h3>
                   <p 
-                    className="text-[#6B7280] text-sm"
+                    className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     Optimized search algorithms ensure results appear in milliseconds, 
@@ -85,16 +103,16 @@ export default function About() {
                   </p>
                 </div>
 
-                <div className="bg-[#FEFEFE] p-6 rounded-2xl border border-[#E8E7E1]">
-                  <Search className="w-8 h-8 text-[#2D3E50] mb-4" />
+                <div className="bg-[#FEFEFE] dark:bg-[#1A1D24] p-6 rounded-2xl border border-[#E8E7E1] dark:border-[#2A2D35]">
+                  <Search className="w-8 h-8 text-[#2D3E50] dark:text-white mb-4" />
                   <h3 
-                    className="text-lg text-[#2D3E50] mb-2"
+                    className="text-lg text-[#2D3E50] dark:text-white mb-2"
                     style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}
                   >
                     Smart Suggestions
                   </h3>
                   <p 
-                    className="text-[#6B7280] text-sm"
+                    className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     Intelligent autocomplete powered by tries provides relevant 
@@ -102,16 +120,16 @@ export default function About() {
                   </p>
                 </div>
 
-                <div className="bg-[#FEFEFE] p-6 rounded-2xl border border-[#E8E7E1]">
-                  <Shield className="w-8 h-8 text-[#2D3E50] mb-4" />
+                <div className="bg-[#FEFEFE] dark:bg-[#1A1D24] p-6 rounded-2xl border border-[#E8E7E1] dark:border-[#2A2D35]">
+                  <Shield className="w-8 h-8 text-[#2D3E50] dark:text-white mb-4" />
                   <h3 
-                    className="text-lg text-[#2D3E50] mb-2"
+                    className="text-lg text-[#2D3E50] dark:text-white mb-2"
                     style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}
                   >
                     Privacy First
                   </h3>
                   <p 
-                    className="text-[#6B7280] text-sm"
+                    className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     Your search history stays on your device. We don't track 
@@ -119,16 +137,16 @@ export default function About() {
                   </p>
                 </div>
 
-                <div className="bg-[#FEFEFE] p-6 rounded-2xl border border-[#E8E7E1]">
-                  <Database className="w-8 h-8 text-[#2D3E50] mb-4" />
+                <div className="bg-[#FEFEFE] dark:bg-[#1A1D24] p-6 rounded-2xl border border-[#E8E7E1] dark:border-[#2A2D35]">
+                  <Database className="w-8 h-8 text-[#2D3E50] dark:text-white mb-4" />
                   <h3 
-                    className="text-lg text-[#2D3E50] mb-2"
+                    className="text-lg text-[#2D3E50] dark:text-white mb-2"
                     style={{ fontFamily: "'Manrope', sans-serif", fontWeight: 500 }}
                   >
                     Curated Results
                   </h3>
                   <p 
-                    className="text-[#6B7280] text-sm"
+                    className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     Results are indexed from quality sources, ensuring you get 
@@ -140,7 +158,7 @@ export default function About() {
 
             <section>
               <h2 
-                className="text-2xl font-light text-[#2D3E50] mb-4"
+                className="text-2xl font-light text-[#2D3E50] dark:text-white mb-4"
                 style={{ fontFamily: "'Fraunces', serif" }}
               >
                 How It Works
@@ -148,20 +166,20 @@ export default function About() {
               <div className="space-y-4">
                 <div className="flex gap-4">
                   <div 
-                    className="w-8 h-8 rounded-full bg-[#2D3E50] text-white flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115] flex items-center justify-center flex-shrink-0"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     1
                   </div>
                   <div>
                     <h4 
-                      className="text-[#2D3E50] font-medium mb-1"
+                      className="text-[#2D3E50] dark:text-white font-medium mb-1"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Inverted Index
                     </h4>
                     <p 
-                      className="text-[#6B7280] text-sm"
+                      className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       We use an inverted index - a data structure that maps terms 
@@ -172,20 +190,20 @@ export default function About() {
 
                 <div className="flex gap-4">
                   <div 
-                    className="w-8 h-8 rounded-full bg-[#2D3E50] text-white flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115] flex items-center justify-center flex-shrink-0"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     2
                   </div>
                   <div>
                     <h4 
-                      className="text-[#2D3E50] font-medium mb-1"
+                      className="text-[#2D3E50] dark:text-white font-medium mb-1"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Binary Search
                     </h4>
                     <p 
-                      className="text-[#6B7280] text-sm"
+                      className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Prefix matching uses binary search for O(log n) complexity, 
@@ -196,20 +214,20 @@ export default function About() {
 
                 <div className="flex gap-4">
                   <div 
-                    className="w-8 h-8 rounded-full bg-[#2D3E50] text-white flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115] flex items-center justify-center flex-shrink-0"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     3
                   </div>
                   <div>
                     <h4 
-                      className="text-[#2D3E50] font-medium mb-1"
+                      className="text-[#2D3E50] dark:text-white font-medium mb-1"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Trie Data Structure
                     </h4>
                     <p 
-                      className="text-[#6B7280] text-sm"
+                      className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Autocomplete suggestions are powered by a Trie (prefix tree), 
@@ -220,20 +238,20 @@ export default function About() {
 
                 <div className="flex gap-4">
                   <div 
-                    className="w-8 h-8 rounded-full bg-[#2D3E50] text-white flex items-center justify-center flex-shrink-0"
+                    className="w-8 h-8 rounded-full bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115] flex items-center justify-center flex-shrink-0"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
                     4
                   </div>
                   <div>
                     <h4 
-                      className="text-[#2D3E50] font-medium mb-1"
+                      className="text-[#2D3E50] dark:text-white font-medium mb-1"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Smart Caching
                     </h4>
                     <p 
-                      className="text-[#6B7280] text-sm"
+                      className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
                       Frequently searched queries are cached for even faster 
@@ -244,7 +262,7 @@ export default function About() {
               </div>
             </section>
 
-            <section className="pt-8 border-t border-[#E8E7E1]">
+            <section className="pt-8 border-t border-[#E8E7E1] dark:border-[#2A2D35]">
               <p 
                 className="text-[#9CA3AF] text-center"
                 style={{ fontFamily: "'Manrope', sans-serif" }}

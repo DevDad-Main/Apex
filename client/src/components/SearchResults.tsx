@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
-import { Search, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ArrowLeft, ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { SearchResult, PaginationInfo } from "../lib/api";
 import api from "../lib/api";
+import { useDarkMode } from "../hooks/useDarkMode";
 
 interface SearchResultsProps {
   initialQuery: string;
@@ -26,6 +27,7 @@ export default function SearchResults({
   onPageChange,
   correction,
 }: SearchResultsProps) {
+  const { isDark, toggle: toggleDark } = useDarkMode();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -33,6 +35,20 @@ export default function SearchResults({
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
   const navigate = useNavigate();
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  const ThemeToggle = () => (
+    <motion.button
+      onClick={toggleDark}
+      whileHover={{ y: -2 }}
+      whileTap={{ scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#2D3E50] dark:hover:text-white transition-colors cursor-pointer bg-transparent border-none p-0"
+      style={{ fontFamily: "'Manrope', sans-serif" }}
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+    >
+      {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+    </motion.button>
+  );
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -127,12 +143,12 @@ export default function SearchResults({
 
   if (loading) {
     return (
-      <div className="min-h-screen w-full bg-white">
+      <div className="min-h-screen w-full bg-white dark:bg-[#0F1115]">
         <motion.header
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
-          className="sticky top-0 bg-[#FEFEFE] border-b border-[#E8E7E1] shadow-sm z-50"
+          className="sticky top-0 bg-[#FEFEFE] dark:bg-[#0F1115] border-b border-[#E8E7E1] dark:border-[#2A2D35] shadow-sm z-50"
         >
           <div className="max-w-7xl mx-auto px-6 py-4">
             <div className="flex items-center gap-6">
@@ -140,13 +156,13 @@ export default function SearchResults({
                 onClick={onBack}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="text-[#2D3E50] hover:text-[#3d5264] transition-colors cursor-pointer"
+                className="text-[#2D3E50] dark:text-white hover:text-[#3d5264] dark:hover:text-white transition-colors cursor-pointer"
               >
                 <ArrowLeft className="w-5 h-5" />
               </motion.button>
 
               <h2
-                className="text-2xl font-light text-[#2D3E50] cursor-pointer hover:opacity-80"
+                className="text-2xl font-light text-[#2D3E50] dark:text-white cursor-pointer hover:opacity-80"
                 style={{ fontFamily: "'Fraunces', serif" }}
                 onClick={onBack}
               >
@@ -173,16 +189,16 @@ export default function SearchResults({
                   }}
                   onKeyDown={handleKeyDown}
                   className="w-full h-12 px-5 pr-12
-                           bg-[#F8F7F4] text-[#2D3E50]
-                           rounded-lg border border-[#E8E7E1]
-                           outline-none focus:border-[#2D3E50]
-                           transition-all duration-200"
+                           bg-[#F8F7F4] dark:bg-[#1A1D24] text-[#2D3E50] dark:text-white
+                           rounded-lg border border-[#E8E7E1] dark:border-[#2A2D35]
+                           outline-none focus:border-[#2D3E50] dark:focus:border-white
+                           transition-all duration-200 placeholder:text-[#9CA3AF]"
                   style={{ fontFamily: "'Manrope', sans-serif" }}
                 />
                 <button
                   type="submit"
                   className="absolute right-3 top-1/2 -translate-y-1/2
-                           text-[#2D3E50] hover:text-[#3d5264]
+                           text-[#2D3E50] dark:text-white hover:text-[#3d5264] dark:hover:text-white
                            transition-colors"
                 >
                   <Search className="w-4 h-4" />
@@ -194,12 +210,12 @@ export default function SearchResults({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2 }}
                     className="absolute top-[calc(100%+8px)] left-0 right-0
-                             bg-[#FEFEFE] rounded-lg
+                             bg-[#FEFEFE] dark:bg-[#1A1D24] rounded-lg
                              shadow-[0_4px_20px_rgba(45,62,80,0.12)]
                              overflow-hidden z-50"
                   >
                     {loadingSuggestions ? (
-                      <div className="px-5 py-3 text-[#6B7280] text-sm">
+                      <div className="px-5 py-3 text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                         Loading...
                       </div>
                     ) : suggestions.length > 0 ? (
@@ -210,12 +226,12 @@ export default function SearchResults({
                           onClick={() => handleSuggestionClick(suggestion)}
                           className={`
                             w-full px-5 py-3 text-left
-                            text-[#2D3E50] text-base
+                            text-[#2D3E50] dark:text-white text-base
                             transition-colors duration-150
                             ${
                               selectedIndex === index
-                                ? "bg-[#F5F5F3]"
-                                : "hover:bg-[#F8F7F4]"
+                                ? "bg-[#F5F5F3] dark:bg-[#2A2D35]"
+                                : "hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]"
                             }
                           `}
                           style={{ fontFamily: "'Manrope', sans-serif" }}
@@ -225,7 +241,7 @@ export default function SearchResults({
                         </button>
                       ))
                     ) : (
-                      <div className="px-5 py-3 text-[#6B7280] text-sm">
+                      <div className="px-5 py-3 text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                         No suggestions
                       </div>
                     )}
@@ -238,7 +254,7 @@ export default function SearchResults({
 
         <main className="max-w-3xl mx-auto px-6 py-8 flex items-center justify-center min-h-[50vh]">
           <div
-            className="text-[#6B7280]"
+            className="text-[#6B7280] dark:text-[#9CA3AF]"
             style={{ fontFamily: "'Manrope', sans-serif" }}
           >
             Loading...
@@ -249,12 +265,12 @@ export default function SearchResults({
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-[#0F1115]">
       <motion.header
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="sticky top-0 bg-[#FEFEFE] border-b border-[#E8E7E1] shadow-sm z-50"
+        className="sticky top-0 bg-[#FEFEFE] dark:bg-[#0F1115] border-b border-[#E8E7E1] dark:border-[#2A2D35] shadow-sm z-50"
       >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center gap-6">
@@ -262,13 +278,13 @@ export default function SearchResults({
               onClick={onBack}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="text-[#2D3E50] hover:text-[#3d5264] transition-colors"
+              className="text-[#2D3E50] dark:text-white hover:text-[#3d5264] dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </motion.button>
 
             <h2
-              className="text-2xl font-light text-[#2D3E50] cursor-pointer hover:opacity-80"
+              className="text-2xl font-light text-[#2D3E50] dark:text-white cursor-pointer hover:opacity-80"
               style={{ fontFamily: "'Fraunces', serif" }}
               onClick={onBack}
             >
@@ -292,16 +308,16 @@ export default function SearchResults({
                 }}
                 onKeyDown={handleKeyDown}
                 className="w-full h-12 px-5 pr-12
-                         bg-[#F8F7F4] text-[#2D3E50]
-                         rounded-lg border border-[#E8E7E1]
-                         outline-none focus:border-[#2D3E50]
-                         transition-all duration-200"
+                         bg-[#F8F7F4] dark:bg-[#1A1D24] text-[#2D3E50] dark:text-white
+                         rounded-lg border border-[#E8E7E1] dark:border-[#2A2D35]
+                         outline-none focus:border-[#2D3E50] dark:focus:border-white
+                         transition-all duration-200 placeholder:text-[#9CA3AF]"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               />
               <button
                 type="submit"
                 className="absolute right-3 top-1/2 -translate-y-1/2
-                         text-[#2D3E50] hover:text-[#3d5264]
+                         text-[#2D3E50] dark:text-white hover:text-[#3d5264] dark:hover:text-white
                          transition-colors"
               >
                 <Search className="w-4 h-4" />
@@ -313,12 +329,12 @@ export default function SearchResults({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2 }}
                   className="absolute top-[calc(100%+8px)] left-0 right-0
-                           bg-[#FEFEFE] rounded-lg
+                           bg-[#FEFEFE] dark:bg-[#1A1D24] rounded-lg
                            shadow-[0_4px_20px_rgba(45,62,80,0.12)]
                            overflow-hidden z-50"
                 >
                   {loadingSuggestions ? (
-                    <div className="px-5 py-3 text-[#6B7280] text-sm">
+                    <div className="px-5 py-3 text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                       Loading...
                     </div>
                   ) : suggestions.length > 0 ? (
@@ -329,12 +345,12 @@ export default function SearchResults({
                         onClick={() => handleSuggestionClick(suggestion)}
                         className={`
                           w-full px-5 py-3 text-left
-                          text-[#2D3E50] text-base
+                          text-[#2D3E50] dark:text-white text-base
                           transition-colors duration-150
                           ${
                             selectedIndex === index
-                              ? "bg-[#F5F5F3]"
-                              : "hover:bg-[#F8F7F4]"
+                              ? "bg-[#F5F5F3] dark:bg-[#2A2D35]"
+                              : "hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]"
                           }
                         `}
                         style={{ fontFamily: "'Manrope', sans-serif" }}
@@ -344,7 +360,7 @@ export default function SearchResults({
                       </button>
                     ))
                   ) : (
-                    <div className="px-5 py-3 text-[#6B7280] text-sm">
+                    <div className="px-5 py-3 text-[#6B7280] dark:text-[#9CA3AF] text-sm">
                       No suggestions
                     </div>
                   )}
@@ -360,7 +376,7 @@ export default function SearchResults({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.15, delay: 0.05 }}
-          className="text-sm text-[#6B7280] mb-6"
+          className="text-sm text-[#6B7280] dark:text-[#9CA3AF] mb-6"
           style={{ fontFamily: "'Manrope', sans-serif" }}
         >
           {pagination ? (
@@ -388,13 +404,13 @@ export default function SearchResults({
                 onClick={() => handleResultClick(result.url)}
               >
                 <div
-                  className="text-sm text-[#3D5A4C] mb-1"
+                  className="text-sm text-[#3D5A4C] dark:text-[#6B8E7D] mb-1"
                   style={{ fontFamily: "'Manrope', sans-serif" }}
                 >
                   {formatUrl(result.url)}
                 </div>
                 <h3
-                  className="text-xl text-[#2D3E50] mb-2 
+                  className="text-xl text-[#2D3E50] dark:text-white mb-2 
                              group-hover:underline
                              transition-all duration-200"
                   style={{
@@ -405,7 +421,7 @@ export default function SearchResults({
                   {result.title}
                 </h3>
                 <p
-                  className="text-[#4B5563] leading-relaxed"
+                  className="text-[#4B5563] dark:text-[#9CA3AF] leading-relaxed"
                   style={{ fontFamily: "'Manrope', sans-serif" }}
                 >
                   {generateSnippet(result.content, initialQuery)}
@@ -422,7 +438,7 @@ export default function SearchResults({
             className="text-center py-12"
           >
             <p
-              className="text-[#6B7280]"
+              className="text-[#6B7280] dark:text-[#9CA3AF]"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
               No results found for "{initialQuery}"
@@ -430,7 +446,7 @@ export default function SearchResults({
             {correction && (
               <button
                 onClick={() => onSearch(correction)}
-                className="text-[#3D5A4C] mt-3 hover:underline"
+                className="text-[#3D5A4C] dark:text-[#6B8E7D] mt-3 hover:underline"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
                 Did you mean: <span className="font-medium">{correction}</span>?
@@ -458,7 +474,7 @@ export default function SearchResults({
               className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-colors ${
                 pagination.page <= 1
                   ? "text-[#9CA3AF] cursor-not-allowed"
-                  : "text-[#2D3E50] hover:bg-[#F8F7F4]"
+                  : "text-[#2D3E50] dark:text-white hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]"
               }`}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -484,8 +500,8 @@ export default function SearchResults({
                     onClick={() => onPageChange?.(pageNum)}
                     className={`w-10 h-10 rounded-lg text-sm transition-colors ${
                       pageNum === pagination.page
-                        ? "bg-[#2D3E50] text-white"
-                        : "text-[#2D3E50] hover:bg-[#F8F7F4]"
+                        ? "bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115]"
+                        : "text-[#2D3E50] dark:text-white hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]"
                     }`}
                   >
                     {pageNum}
@@ -500,7 +516,7 @@ export default function SearchResults({
               className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm transition-colors ${
                 pagination.page >= pagination.totalPages
                   ? "text-[#9CA3AF] cursor-not-allowed"
-                  : "text-[#2D3E50] hover:bg-[#F8F7F4]"
+                  : "text-[#2D3E50] dark:text-white hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]"
               }`}
             >
               Next
@@ -510,17 +526,30 @@ export default function SearchResults({
         )}
       </main>
 
-      <footer className="border-t border-[#E8E7E1] py-6 mt-12">
-        <div className="max-w-3xl mx-auto px-6 flex justify-center gap-8">
+      <footer className="border-t border-[#E8E7E1] dark:border-[#2A2D35] py-6 mt-12">
+        <div className="max-w-3xl mx-auto px-6 flex justify-center items-center gap-8">
           <Link
             to="/about"
-            className="text-[#6B7280] text-sm font-light hover:text-[#2D3E50] transition-colors"
+            className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-light hover:text-[#2D3E50] dark:hover:text-white transition-colors"
             style={{ fontFamily: "'Manrope', sans-serif" }}
           >
             About
           </Link>
-          <span className="text-[#6B7280] text-sm">Privacy</span>
-          <span className="text-[#6B7280] text-sm">Settings</span>
+          <Link
+            to="/privacy"
+            className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-light hover:text-[#2D3E50] dark:hover:text-white transition-colors"
+            style={{ fontFamily: "'Manrope', sans-serif" }}
+          >
+            Privacy
+          </Link>
+          <Link
+            to="/settings"
+            className="text-[#6B7280] dark:text-[#9CA3AF] text-sm font-light hover:text-[#2D3E50] dark:hover:text-white transition-colors"
+            style={{ fontFamily: "'Manrope', sans-serif" }}
+          >
+            Settings
+          </Link>
+          <ThemeToggle />
         </div>
       </footer>
     </div>
