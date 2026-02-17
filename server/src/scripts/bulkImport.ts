@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from "uuid";
 import { invertedIndex } from "../index/invertedIndex.js";
 import { loadDocuments, saveDocuments } from "../scraper/persistence.js";
 import { trie } from "../autocomplete/trie.js";
-import tokenizer from "../textProcessor/tokenizer.js";
+import tokenizer, { extractPhrases } from "../textProcessor/tokenizer.js";
 
 /**
  * List of 100+ Wikipedia article titles across multiple categories
@@ -278,7 +278,7 @@ async function bulkImport() {
   console.log("🌳 Building autocomplete Trie...");
   const allDocs = invertedIndex.getAllDocuments();
   const docsArray = Array.from(allDocs.values());
-  trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text));
+  trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text), extractPhrases);
   
   console.log("\n" + "=".repeat(50));
   console.log("✅ Bulk import complete!");

@@ -7,6 +7,7 @@ import {
   sendSuccess,
 } from "devdad-express-utils";
 import { Router } from "express";
+import { searchHistoryService } from "@/services/searchHistory.js";
 
 const searchRouter = Router();
 
@@ -48,6 +49,10 @@ searchRouter.get(
         200,
       );
     }
+
+    // Only record once we have some successful searches
+    await searchHistoryService.record(query as string);
+
     return sendSuccess(
       res,
       response,

@@ -4,7 +4,7 @@ import app from "./app.js";
 import { invertedIndex } from "./index/invertedIndex.js";
 import { loadDocumentsFromCloud } from "./scraper/persistence.js";
 import { trie } from "./autocomplete/trie.js";
-import tokenizer from "./textProcessor/tokenizer.js";
+import tokenizer, { extractPhrases } from "./textProcessor/tokenizer.js";
 import { initializeRedisClient } from "./utils/redis.utils.js";
 import { findClosestTerm } from "./utils/levenshtein.utils.js";
 
@@ -35,7 +35,7 @@ const dbStatus = getDBStatus();
     // Build autocomplete Trie from all documents
     const allDocs = invertedIndex.getAllDocuments();
     const docsArray = Array.from(allDocs.values());
-    trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text));
+    trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text), extractPhrases);
     logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
 
     await initializeRedisClient();

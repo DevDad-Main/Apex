@@ -27,6 +27,8 @@
  * @module autocomplete/trie
  */
 
+import { extractPhases } from "@/textProcessor/tokenizer.js";
+
 /**
  * Represents a single node in the Trie.
  * Each node stores:
@@ -222,6 +224,7 @@ class Trie {
   buildFromDocuments(
     documents: Array<{ id: string; title?: string; content: string }>,
     tokenizer: (text: string) => string[],
+    extractPhrases: (text: string) => string[],
   ): void {
     // Clear existing trie by creating new root
     this.root = new TrieNode();
@@ -234,12 +237,21 @@ class Trie {
 
       // Tokenize and insert each word
       const words = tokenizer(fullText);
+      const phrases = extractPhrases(fullText);
 
       for (const word of words) {
         // Avoid inserting duplicates
         if (!insertedWords.has(word)) {
           this.insert(word);
           insertedWords.add(word);
+        }
+      }
+
+      // Insert phrases (bigrams)
+      for (const phrase of phrases) {
+        if (!insertedWords.has(phrase)) {
+          this.insert(phrase);
+          insertedWords.add(phrase);
         }
       }
     }

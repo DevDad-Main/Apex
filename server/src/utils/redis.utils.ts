@@ -13,7 +13,7 @@ const MAX_REDIS_RETRIES = 3;
 
 // Override the default arguments to stop conflict errors with RESP v2 and v3
 // The generic arguments are: <Modules, Functions, Scripts, Protocol>
-let client: RedisClientType<
+let _client: RedisClientType<
   RedisModules,
   any,
   any,
@@ -43,38 +43,47 @@ const options: RedisClientOptions<RedisModules, any, any, typeof RESP_VERSION> =
 
 export async function initializeRedisClient() {
   try {
-    if (!client) {
-      client = createClient(options);
+    if (!_client) {
+      _client = createClient(options);
 
-      client.on("error", (error: any) => {
+      _client.on("error", (error: any) => {
         logger.error("❌ Redis error", {
           message: error.message,
           code: error.code,
         });
       });
 
-      client.on("connect", () => {
+      _client.on("connect", () => {
         logger.info("Redis Connected Successfully");
       });
 
-      client.on("ready", () => {
+      _client.on("ready", () => {
         logger.info("🟢 Redis ready");
       });
 
-      client.on("reconnecting", () => {
+      _client.on("reconnecting", () => {
         logger.warn(`🔄 Redis is trying to reconnect..`);
       });
 
-      await client.connect();
+      await _client.connect();
     }
-    return client;
+    return _client;
   } catch (error) {
     logger.error("Failed to connect to redis server..", { error });
     // Clean up the client reference if connection fails
-    if (client) {
-      await client.quit().catch(() => {});
-      client = null;
+    if (_client) {
+      await _client.quit().catch(() => {});
+      _client = null;
     }
     throw error;
   }
+}
+
+export function getRedisClient() {
+  if (!_client) {
+    throw new Error(
+      "Redis not initialized - call initializeRedisClient() first",
+    );
+  }
+  return _client;
 }
