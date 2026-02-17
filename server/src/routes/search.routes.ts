@@ -7,7 +7,7 @@ import {
   sendSuccess,
 } from "devdad-express-utils";
 import { Router } from "express";
-import { searchHistoryService } from "@/services/searchHistory.js";
+import { searchHistoryService } from "../services/searchHistory.js";
 
 const searchRouter = Router();
 

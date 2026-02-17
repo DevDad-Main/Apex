@@ -250,7 +250,7 @@ export default function Settings() {
                   </button>
                 </div>
 
-                <div className="bg-[#F8F7F4] dark:bg-[#1A1D24] p-6 rounded-xl">
+                <div className="bg-[#F8F7F4] dark:bg-[#1A1D24] p-6 rounded-xl opacity-50">
                   <Database className="w-8 h-8 text-[#2D3E50] dark:text-white mb-4" />
                   <h3 
                     className="text-lg text-[#2D3E50] dark:text-white mb-2"
@@ -262,14 +262,14 @@ export default function Settings() {
                     className="text-[#6B7280] dark:text-[#9CA3AF] text-sm mb-4"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
-                    Delete all documents from your local search index
+                    Delete all documents from your local search index (Coming soon)
                   </p>
                   <button
-                    onClick={clearDatabase}
-                    className="px-4 py-2 bg-[#2D3E50] dark:bg-white text-white dark:text-[#0F1115] rounded-lg text-sm hover:opacity-90 transition-opacity"
+                    disabled
+                    className="px-4 py-2 bg-gray-400 text-gray-200 rounded-lg text-sm cursor-not-allowed"
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                   >
-                    Clear Database
+                    Coming Soon
                   </button>
                 </div>
               </div>
