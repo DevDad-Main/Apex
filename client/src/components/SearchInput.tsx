@@ -68,7 +68,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
         abortControllerRef.current.abort();
       }
     };
-  }, [query, isFocused]);
+  }, [query]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
