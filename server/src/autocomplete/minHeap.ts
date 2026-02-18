@@ -49,6 +49,8 @@ class MinHeap<T> {
    * )
    */
   private compare: (a: T, b: T) => number;
+
+  //#region Constructor
   /**
    * Creates a new MinHeap instance.
    *
@@ -62,7 +64,9 @@ class MinHeap<T> {
     // Default: smaller values rise to the top (standard min heap)
     this.compare = compare || ((a: any, b: any) => a - b);
   }
+  //#endregion
 
+  //#region Get Size
   /**
    * Returns the number of elements in the heap
    * @returns {number} The size of the heap
@@ -70,7 +74,9 @@ class MinHeap<T> {
   get size(): number {
     return this.heap.length;
   }
+  //#endregion
 
+  //#region Push
   /**
    * Adds an element to the heap.
    *
@@ -118,7 +124,9 @@ class MinHeap<T> {
     // 2. Bubble up to restore the heap property
     this.bubbleUp(this.heap.length - 1);
   }
+  //#endregion
 
+  //#region Pop
   /**
    * Removes and returns the minimum element (root).
    *
@@ -175,7 +183,9 @@ class MinHeap<T> {
     // 4. Return the minimum we saved
     return min;
   }
+  //#endregion
 
+  //#region Peek
   /**
    * Returns the minimum element (root) without removing it.
    * O(1) operation - just look at the first array element.
@@ -189,7 +199,9 @@ class MinHeap<T> {
   peek(): T | undefined {
     return this.heap[0];
   }
+  //#endregion
 
+  //#region Bubble Up
   /**
    * Moves an element up the heap until it's in correct position.
    * Used after inserting a new element at the end.
@@ -228,7 +240,9 @@ class MinHeap<T> {
       index = parentIndex;
     }
   }
+  //#endregion
 
+  //#region Bubble Down
   /**
    * Moves an element down the heap until it's in correct position.
    * Used after removing the root and replacing with last element.
@@ -250,6 +264,43 @@ class MinHeap<T> {
 
     // Continue while the element has at least one child
     // Left child exists if 2 * i + 1 < length
-    while (true) {}
+    while (true) {
+      const leftChildIndex = 2 * index + 1;
+      const rightChildIndex = 2 * index + 2;
+
+      let smallestChildIndex = leftChildIndex;
+
+      // Check if right child exisits and is smaller than left child
+      // NOTE: for TOP-K, we might want to keep the highest scores at root
+      // So "smaller" in our comparator means "higher priority"
+      if (
+        rightChildIndex < length &&
+        this.compare(this.heap[rightChildIndex], this.heap[leftChildIndex]) < 0
+      ) {
+        smallestChildIndex = rightChildIndex;
+      }
+
+      // If no children exist, we're done
+      if (smallestChildIndex >= length) {
+        return;
+      }
+
+      // If current element is <= smallest child, we're done
+      if (this.compare(this.heap[index], this.heap[smallestChildIndex]) <= 0) {
+        return;
+      }
+
+      // Swap with smallest child
+      [this.heap[index], this.heap[smallestChildIndex]] = [
+        this.heap[smallestChildIndex],
+        this.heap[index],
+      ];
+
+      // Move down to child's position and continue
+      index = smallestChildIndex;
+    }
   }
+  //#endregion
 }
+
+export { MinHeap };
