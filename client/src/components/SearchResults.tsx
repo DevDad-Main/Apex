@@ -293,7 +293,7 @@ export default function SearchResults({
               Apex
             </h2>
 
-            <form onSubmit={handleSubmit} className="flex-1 max-w-2xl relative">
+              <form onSubmit={handleSubmit} className="flex-1 max-w-2xl relative">
               <input
                 type="text"
                 value={query}
@@ -306,9 +306,13 @@ export default function SearchResults({
                   if (query.length > 0) setShowSuggestions(true);
                 }}
                 onBlur={() => {
-                  setTimeout(() => setShowSuggestions(false), 200);
+                  // Delay to allow click events to register on mobile
+                  setTimeout(() => setShowSuggestions(false), 300);
                 }}
                 onKeyDown={handleKeyDown}
+                onTouchStart={() => {
+                  if (query.length > 0) setShowSuggestions(true);
+                }}
                 className="w-full h-12 px-5 pr-12
                          bg-[#F8F7F4] dark:bg-[#1A1D24] text-[#2D3E50] dark:text-white
                          rounded-lg border border-[#E8E7E1] dark:border-[#2A2D35]
@@ -395,6 +399,29 @@ export default function SearchResults({
         </motion.div>
 
         <div className="space-y-8">
+          {/* Correction suggestion - show prominently at top */}
+          {correction && results.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 bg-[#f0f7f4] dark:bg-[#1a2e25] rounded-xl border border-[#3D5A4C]/20"
+            >
+              <p 
+                className="text-sm text-[#3D5A4C] dark:text-[#6B8E7D]"
+                style={{ fontFamily: "'Manrope', sans-serif" }}
+              >
+                Showing results for "{initialQuery}". Did you mean{" "}
+                <button 
+                  onClick={() => onSearch(correction)}
+                  className="font-medium underline hover:no-underline"
+                >
+                  "{correction}"
+                </button>
+                ?
+              </p>
+            </motion.div>
+          )}
+          
           {(results || []).map((result, index) => {
             // Results now include full document data directly
             if (!result.url) return null;
@@ -440,10 +467,10 @@ export default function SearchResults({
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center py-12"
+            className="text-center py-12 px-4"
           >
             <p
-              className="text-[#6B7280] dark:text-[#9CA3AF]"
+              className="text-[#6B7280] dark:text-[#9CA3AF] text-lg"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
               No results found for "{initialQuery}"
@@ -451,17 +478,21 @@ export default function SearchResults({
             {correction && (
               <button
                 onClick={() => onSearch(correction)}
-                className="text-[#3D5A4C] dark:text-[#6B8E7D] mt-3 hover:underline"
+                className="block w-full max-w-xs mx-auto mt-4 px-6 py-3 
+                         bg-[#3D5A4C] dark:bg-[#4a6b5c] 
+                         text-white rounded-xl text-base font-medium
+                         hover:opacity-90 active:scale-95
+                         transition-all"
                 style={{ fontFamily: "'Manrope', sans-serif" }}
               >
-                Did you mean: <span className="font-medium">{correction}</span>?
+                Did you mean "{correction}"?
               </button>
             )}
             <p
-              className="text-[#9CA3AF] text-sm mt-4"
+              className="text-[#9CA3AF] text-sm mt-6"
               style={{ fontFamily: "'Manrope', sans-serif" }}
             >
-              Try scraping some websites first using the API
+              Try scraping more websites using the API
             </p>
           </motion.div>
         )}

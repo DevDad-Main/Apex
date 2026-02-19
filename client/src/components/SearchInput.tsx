@@ -18,6 +18,24 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Show suggestions when there's a query or history, regardless of focus
+  const shouldShowSuggestions = showSuggestions || isFocused || query.length > 0;
+
+  // Handle container click to show suggestions
+  const handleContainerClick = () => {
+    if (query.length > 0 || history.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
+  const handleInputClick = () => {
+    // Always show suggestions on click/tap
+    if (query.length > 0 || history.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
 
   // Load history when focused and input is empty
   useEffect(() => {
@@ -146,7 +164,9 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
           className="relative"
         >
           <input
+            ref={inputRef}
             type="text"
+            onClick={handleInputClick}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
@@ -163,7 +183,12 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             }}
             onBlur={() => {
               setIsFocused(false);
-              setTimeout(() => setShowSuggestions(false), 200);
+              // Delay hiding to allow click events to register
+              setTimeout(() => {
+                if (!inputRef.current?.matches(':focus-within')) {
+                  setShowSuggestions(false);
+                }
+              }, 300);
             }}
             onKeyDown={handleKeyDown}
             placeholder="Search the web..."
@@ -200,7 +225,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
         </motion.div>
 
         {/* Suggestions / History Dropdown */}
-        {(showSuggestions || isFocused) && (
+        {shouldShowSuggestions && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -208,7 +233,8 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             className="absolute top-[calc(100%+8px)] left-0 right-0
                      bg-[#FEFEFE] dark:bg-[#1A1D24] rounded-2xl
                      shadow-[0_4px_20px_rgba(45,62,80,0.12)]
-                     overflow-hidden z-50"
+                     overflow-hidden z-[100] max-h-[300px] overflow-y-auto"
+            onClick={handleContainerClick}
           >
             {/* Show autocomplete if there's a query */}
             {query.length > 0 && (
