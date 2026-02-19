@@ -150,7 +150,11 @@ class SearchService {
       topKItems.push(topKHeap.pop()!);
     }
 
-    return topKItems.sort((a, b) => b.score - a.score).map((s) => s.term);
+    //TODO: Add a regex check to strip off the '.' -> Later tidy this up and add it to the tokenizer so we clean it up from the start
+    return topKItems
+      .sort((a, b) => b.score - a.score)
+      .map((s) => s.term.replace(/\./g, ""))
+      .filter((term) => term.length > 0);
   }
   //#endregion
 
