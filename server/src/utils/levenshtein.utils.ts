@@ -1,3 +1,4 @@
+import { logger } from "devdad-express-utils";
 import { invertedIndex } from "../index/invertedIndex.js";
 
 function levenshteinDistance(str1: string, str2: string): number {
@@ -48,16 +49,26 @@ export function findClosestTerm(query: string): string | null {
 
   let closestTerm = null;
   let minDistance = Infinity;
+  // Track max document frecency, so if we have multiple options from levensthein distance, we then choose the one with the most document frecency
+  let maxDf = 0;
 
   // Loop through all the valid terms
   for (const term of validCandidates) {
     // Calculate the distance between terms
     const distance = levenshteinDistance(query, term);
+    const entry = invertedIndex.getIndexEntry(term);
 
-    // Keep track of minimum
-    if (distance < minDistance) {
+    const documentFrec = entry?.df || 0;
+
+    // Update - tiebreaker on document frecency instead of just distance based
+    if (
+      distance < minDistance ||
+      (distance === minDistance && documentFrec > maxDf)
+    ) {
       minDistance = distance;
       closestTerm = term;
+      maxDf = documentFrec;
+      logger.info(`Closest Term: ${closestTerm}`);
     }
   }
   // Only return if reasonable.. (e.g distance <= 3)

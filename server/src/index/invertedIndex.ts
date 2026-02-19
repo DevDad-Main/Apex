@@ -354,6 +354,10 @@ class InvertedIndex {
   getSortedTerms(): string[] {
     return this.sortedTerms;
   }
+
+  getIndexEntry(term: string): IndexEntry | undefined {
+    return this.index.get(term);
+  }
 }
 
 export const invertedIndex = new InvertedIndex();
