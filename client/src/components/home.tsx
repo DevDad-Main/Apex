@@ -19,6 +19,7 @@ function Home() {
   const [pagination, setPagination] = useState<PaginationInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [correction, setCorrection] = useState<string | null>(null);
+  const [responseTime, setResponseTime] = useState<number>(0);
   const isInitialLoad = useRef(true);
 
   const handleSearch = async (query: string, updateUrl = true, page = 1) => {
@@ -30,6 +31,7 @@ function Home() {
       setSearchResults(response.results);
       setPagination(response.pagination);
       setCorrection(response.correction || null);
+      setResponseTime(response.responseTimeMs);
       
       if (updateUrl) {
         addToHistory(query);
@@ -39,6 +41,7 @@ function Home() {
       console.error('Search failed:', error);
       setSearchResults([]);
       setPagination(null);
+      setResponseTime(0);
     } finally {
       setLoading(false);
       setShowResults(true);
@@ -102,6 +105,7 @@ function Home() {
         pagination={pagination}
         onPageChange={handlePageChange}
         correction={correction}
+        responseTime={responseTime}
       />
     );
   }

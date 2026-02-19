@@ -25,6 +25,9 @@ export interface SearchResponse {
   results: SearchResult[];
   pagination: PaginationInfo;
   correction?: string;
+  meta?: {
+    responseTimeMs: number;
+  };
 }
 
 export interface Document {
@@ -54,11 +57,16 @@ export interface AutocompleteResponse {
 }
 
 const api = {
-  search: async (query: string, page = 1, limit = 10): Promise<SearchResponse> => {
+  search: async (query: string, page = 1, limit = 10): Promise<{ results: SearchResult[]; pagination: PaginationInfo; correction?: string; responseTimeMs: number }> => {
     const response = await apiClient.get<{ success: boolean; data: SearchResponse; message: string }>("/search", {
       params: { query, page, limit },
     });
-    return response.data.data;
+    return {
+      results: response.data.data.results,
+      pagination: response.data.data.pagination,
+      correction: response.data.data.correction,
+      responseTimeMs: response.data.data.meta?.responseTimeMs ?? 0,
+    };
   },
 
   scrape: async (url: string): Promise<Document> => {

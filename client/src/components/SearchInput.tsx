@@ -38,14 +38,21 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     }
 
     if (query.length > 0 && isFocused) {
-      setLoadingSuggestions(true);
+      // Keep suggestions visible while loading
+      setShowSuggestions(true);
       debounceRef.current = setTimeout(async () => {
         try {
           abortControllerRef.current = new AbortController();
           console.log('Fetching autocomplete for:', query);
           const results = await api.autocomplete(query, abortControllerRef.current.signal);
           console.log('Got results:', results.length);
-          setSuggestions(results);
+          // Only show suggestions if we got results and query still matches
+          if (results.length > 0) {
+            setSuggestions(results);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+          }
         } catch (error: unknown) {
           if (error instanceof Error && error.name === 'AbortError') {
             return;
@@ -55,9 +62,10 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
         } finally {
           setLoadingSuggestions(false);
         }
-      }, 800);
+      }, 200);
     } else {
       setSuggestions([]);
+      // Don't immediately hide - let the blur handler handle that
     }
 
     return () => {

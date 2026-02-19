@@ -15,6 +15,7 @@ interface SearchResultsProps {
   pagination?: PaginationInfo | null;
   onPageChange?: (page: number) => void;
   correction?: string | null;
+  responseTime?: number;
 }
 
 export default function SearchResults({
@@ -26,6 +27,7 @@ export default function SearchResults({
   pagination,
   onPageChange,
   correction,
+  responseTime = 0,
 }: SearchResultsProps) {
   const { isDark, toggle: toggleDark } = useDarkMode();
   const [query, setQuery] = useState(initialQuery);
@@ -383,6 +385,9 @@ export default function SearchResults({
             <>
               About {pagination.total} results 
               (Page {pagination.page} of {pagination.totalPages})
+              {responseTime > 0 && (
+                <span className="ml-2 text-[#9CA3AF]">• {responseTime}ms</span>
+              )}
             </>
           ) : (
             results?.length > 0 ? `About ${results.length} results` : ''

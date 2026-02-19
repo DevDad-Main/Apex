@@ -100,7 +100,7 @@ class SearchService {
   async autocomplete(query: string, limit = 10) {
     // Get MORE candidates than before - new heap makes this efficient!
     // Previously: limit * 2 = 20
-    // Now we cna do limit * 10 = 100 (5x more candidates!)
+    // Now we can do limit * 10 = 100 (5x more candidates!)
     const candidateCount = limit * 10;
 
     // Get trie suggestions (words + phrases)

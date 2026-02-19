@@ -15,6 +15,7 @@ searchRouter.get(
   "/",
   catchAsync(async (req, res, next) => {
     const { query, page, limit } = req.query;
+    const startTime = performance.now();
 
     res.set("Cache-Control", "no-store, no-cache, must-revalidate");
 
@@ -36,6 +37,8 @@ searchRouter.get(
       limitNum,
     );
 
+    const responseTime = Number((performance.now() - startTime).toFixed(2));
+
     logger.info(`Results found.. ${response.pagination.total}`, {
       results: response.results,
     });
@@ -44,7 +47,7 @@ searchRouter.get(
       const correction = findClosestTerm(query as string);
       return sendSuccess(
         res,
-        { response, correction },
+        { response: { ...response, meta: { responseTimeMs: responseTime } }, correction },
         `No results found for this query. Did you mean: ${correction}?`,
         200,
       );
@@ -55,7 +58,7 @@ searchRouter.get(
 
     return sendSuccess(
       res,
-      response,
+      { ...response, meta: { responseTimeMs: responseTime } },
       "Successfully found searches for query",
       200,
     );

@@ -26,7 +26,7 @@ router.get(
     return sendSuccess(
       res,
       suggestions,
-      "Autocomplete suggestions retrieved successfully.",
+      "Autocomplete suggestions retrieved successfully",
       200,
     );
   }),
