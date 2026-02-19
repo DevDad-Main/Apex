@@ -1,565 +1,444 @@
 /**
- * @fileoverview Bulk import script to fetch Wikipedia articles and add to search index.
+ * @fileoverview Unified Data Importer
  * 
- * This script fetches 100+ Wikipedia articles across multiple categories
- * and adds them to the inverted index and persistence.
+ * Fetches data from multiple sources:
+ * - Wikipedia (encyclopedia articles)
+ * - GitHub (trending repositories)
+ * - Stack Overflow (programming questions)
+ * - Hacker News (tech stories)
+ * - Open Library (books)
+ * - Public APIs (countries, holidays, jokes)
+ * - Dev.to (developer articles)
+ * - Reddit (popular posts)
  * 
- * Usage: npx tsx src/scripts/bulkImport.ts
+ * Usage: 
+ *   npx tsx src/scripts/bulkImport.ts          # Run all importers
+ *   npx tsx src/scripts/bulkImport.ts wiki      # Wikipedia only
+ *   npx tsx src/scripts/bulkImport.ts github    # GitHub only
+ *   npx tsx src/scripts/bulkImport.ts stats     # Show stats
  * 
  * @module scripts/bulkImport
  */
 
 import "dotenv/config";
+import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
-import { invertedIndex } from "../index/invertedIndex.js";
 import { loadDocuments, saveDocuments, saveDocumentsToCloud } from "../scraper/persistence.js";
-import { trie } from "../autocomplete/trie.js";
-import tokenizer, { extractPhrases } from "../textProcessor/tokenizer.js";
 
-/**
- * List of 100+ Wikipedia article titles across multiple categories
- */
-const TOPICS = {
-  // Programming Languages (10)
-  programming: [
-    "Python",
-    "JavaScript",
-    "Java_(programming_language)",
-    "TypeScript",
-    "C++",
-    "C_Sharp_(programming_language)",
-    "Go_(programming_language)",
-    "Rust_(programming_language)",
-    "Ruby_(programming_language)",
-    "PHP"
-  ],
-  
-  // Web Technologies (10)
-  web: [
-    "HTML",
-    "CSS",
-    "HTTP",
-    "REST",
-    "GraphQL",
-    "JSON",
-    "XML",
-    "AJAX",
-    "Web_development",
-    "Web_application"
-  ],
-  
-  // Frameworks & Libraries (10)
-  frameworks: [
-    "React_(web_framework)",
-    "Angular_(web_framework)",
-    "Vue.js",
-    "Node.js",
-    "Express.js",
-    "Django",
-    "Flask_(web_framework)",
-    "Spring_(framework)",
-    "Laravel",
-    "jQuery"
-  ],
-  
-  // AI & Machine Learning (10)
-  ai_ml: [
-    "Artificial_intelligence",
-    "Machine_learning",
-    "Deep_learning",
-    "Neural_network",
-    "Natural_language_processing",
-    "Computer_vision",
-    "ChatGPT",
-    "Large_language_model",
-    "Reinforcement_learning",
-    "Supervised_learning"
-  ],
-  
-  // Data Science (10)
-  data_science: [
-    "Data_science",
-    "Data_mining",
-    "Data_analysis",
-    "Statistics",
-    "Big_data",
-    "Data_visualization",
-    "Pandas_(software)",
-    "NumPy",
-    "TensorFlow",
-    "PyTorch"
-  ],
-  
-  // Computer Science Fundamentals (10)
-  cs_fundamentals: [
-    "Data_structure",
-    "Algorithm",
-    "Complexity_theory",
-    "Recursion",
-    "Object-oriented_programming",
-    "Functional_programming",
-    "Operating_system",
-    "Computer_network",
-    "Database",
-    "SQL"
-  ],
-  
-  // DevOps & Cloud (10)
-  devops: [
-    "DevOps",
-    "Docker_(software)",
-    "Kubernetes",
-    "Git",
-    "CI/CD",
-    "Amazon_Web_Services",
-    "Microsoft_Azure",
-    "Google_Cloud_Platform",
-    "Cloud_computing",
-    "Infrastructure_as_code"
-  ],
-  
-  // Software Engineering (10)
-  software_eng: [
-    "Software_engineering",
-    "Software_development",
-    "Software_architecture",
-    "Agile_software_development",
-    "Scrum_(software_development)",
-    "Waterfall_model",
-    "Software_design_pattern",
-    "Unit_testing",
-    "Integration_testing",
-    "Code_review"
-  ],
-  
-  // Security (10)
-  security: [
-    "Computer_security",
-    "Cybersecurity",
-    "Encryption",
-    "Cryptography",
-    "SQL_injection",
-    "Cross-site_scripting",
-    "Authentication",
-    "OAuth",
-    "JSON_Web_Token",
-    "Malware"
-  ],
-  
-  // General Tech (10)
-  general_tech: [
-    "Internet",
-    "World_Wide_Web",
-    "Browser",
-    "Server_(computing)",
-    "Client-server_model",
-    "API",
-    "Microservices",
-    "Monolithic_application",
-    "Frontend_and_backend",
-    "Full-stack_development"
-  ],
-  
-  // Science (10)
-  science: [
-    "Physics",
-    "Chemistry",
-    "Biology",
-    "Mathematics",
-    "Quantum_mechanics",
-    "Relativity",
-    "Genetics",
-    "Astronomy",
-    "Neuroscience",
-    "Climate_change"
-  ],
+interface ScrapedDoc {
+  id: string;
+  url: string;
+  title: string;
+  content: string;
+  scrapedAt: string;
+}
 
-  // History (10)
-  history: [
-    "World_War_II",
-    "World_War_I",
-    "French_Revolution",
-    "Roman_Empire",
-    "Ancient_Egypt",
-    "Industrial_Revolution",
-    "Renaissance",
-    "Cold_War",
-    "American_Revolution",
-    "Middle_Ages"
-  ],
+type ImportSource = "wiki" | "github" | "stackoverflow" | "hackernews" | "openlibrary" | "publicapi" | "devto" | "reddit" | "all";
 
-  // Geography (10)
-  geography: [
-    "Europe",
-    "Asia",
-    "Africa",
-    "North_America",
-    "South_America",
-    "Australia",
-    "Antarctica",
-    "Amazon_rainforest",
-    "Mount_Everest",
-    "Pacific_Ocean"
-  ],
-
-  // Sports (10)
-  sports: [
-    "Football",
-    "Basketball",
-    "Baseball",
-    "Soccer",
-    "Tennis",
-    "Olympic_Games",
-    "Cricket",
-    "Golf",
-    "Swimming",
-    "Marathon"
-  ],
-
-  // Health & Medicine (10)
-  health: [
-    "Human_heart",
-    "COVID-19",
-    "Vaccine",
-    "Cancer",
-    "Diabetes",
-    "Mental_health",
-    "Brain",
-    "Immune_system",
-    "Antibiotic",
-    "Human_genome"
-  ],
-
-  // Finance & Economics (10)
-  finance: [
-    "Stock_market",
-    "Bitcoin",
-    "Cryptocurrency",
-    "Inflation",
-    "Gross_Domestic_Product",
-    "Federal_Reserve",
-    "International_Monetary_Fund",
-    "World_Bank",
-    "Investment_banking",
-    "Financial_crisis_of_2008"
-  ],
-
-  // Philosophy (10)
-  philosophy: [
-    "Philosophy",
-    "Existentialism",
-    "Stoicism",
-    "Karl_Marx",
-    "Immanuel_Kant",
-    "Plato",
-    "Aristotle",
-    "Friedrich_Nietzsche",
-    "Jean-Paul_Sartre",
-    "Logic"
-  ],
-
-  // Psychology (10)
-  psychology: [
-    "Psychology",
-    "Cognitive_psychology",
-    "Behavioral_psychology",
-    "Freud",
-    "Mental_disorder",
-    "Depression",
-    "Anxiety",
-    "Intelligence",
-    "Memory",
-    "Consciousness"
-  ],
-
-  // Literature (10)
-  literature: [
-    "William_Shakespeare",
-    "Jane_Austen",
-    "Harry_Potter",
-    "The_Lord_of_the_Rings",
-    "Don_Quixote",
-    "War_and_Peace",
-    "One_Thousand_and_One_Nights",
-    "Divine_Comedy",
-    "The_Bible",
-    "Mahabharata"
-  ],
-
-  // Art & Culture (10)
-  art: [
-    "Leonardo_da_Vinci",
-    "Pablo_Picasso",
-    "Vincent_van_Gogh",
-    "Mona_Lisa",
-    "The_Starry_Night",
-    "Graffiti",
-    "Photography",
-    "Sculpture",
-    "Renaissance_art",
-    "Modern_art"
-  ],
-
-  // Politics & Government (10)
-  politics: [
-    "Democracy",
-    "Republicanism",
-    "Monarchy",
-    "Communism",
-    "Liberalism",
-    "Conservatism",
-    "United_Nations",
-    "European_Union",
-    "NATO",
-    "Constitutional_law"
-  ],
-
-  // Business & Entrepreneurship (10)
-  business: [
-    "Business",
-    "Entrepreneurship",
-    "Startup_company",
-    "Venture_capital",
-    "Business_model",
-    "Marketing",
-    "Supply_chain",
-    "Project_management",
-    "Strategic_management",
-    "Mergers_and_acquisitions"
-  ],
-
-  // Gaming (10)
-  gaming: [
-    "Video_game",
-    "Minecraft",
-    "Fortnite",
-    "League_of_Legends",
-    "Chess",
-    "Poker",
-    "Virtual_reality",
-    "Esports",
-    "Game_design",
-    "Console_gaming"
-  ],
-
-  // Food & Cooking (10)
-  food: [
-    "Cuisine",
-    "Italian_cuisine",
-    "Chinese_cuisine",
-    "French_cuisine",
-    "Sushi",
-    "Pizza",
-    "Bread",
-    "Wine",
-    "Coffee",
-    "Tea"
-  ],
-
-  // Travel (10)
-  travel: [
-    "Tourism",
-    "Paris",
-    "New_York_City",
-    "Tokyo",
-    "London",
-    "Rome",
-    "Sydney_Opera_House",
-    "Great_Wall_of_China",
-    "Machu_Picchu",
-    "Taj_Mahal"
-  ],
-
-  // Music (10)
-  music: [
-    "Music",
-    "Jazz",
-    "Rock_music",
-    "Classical_music",
-    "Hip_hop",
-    "Electronic_dance_music",
-    "Mozart",
-    "The_Beatles",
-    "Bach",
-    "Ludwig_van_Beethoven"
-  ],
-
-  // Movies & Television (10)
-  movies: [
-    "Film",
-    "The_Godfather",
-    "Star_Wars",
-    "Marvel_Cinematic_Universe",
-    "Netflix",
-    "Academy_Award",
-    "Documentary",
-    "Animation",
-    "Horror_film",
-    "Science_fiction_film"
-  ],
-
-  // Social Media & Internet (10)
-  internet: [
-    "Social_media",
-    "Facebook",
-    "Twitter",
-    "Instagram",
-    "YouTube",
-    "TikTok",
-    "Internet",
-    "Email",
-    "Online_shopping",
-    "E-commerce"
-  ],
-
-  // Law (10)
-  law: [
-    "Law",
-    "Criminal_law",
-    "Contract_law",
-    "International_law",
-    "Human_rights",
-    "Civil_law",
-    "Common_law",
-    "Constitutional_law",
-    "Corporate_law",
-    "Patent"
-  ]
+// ==================== CONFIG ====================
+const WIKIPEDIA_TOPICS: Record<string, string[]> = {
+  programming: ["Python","JavaScript","TypeScript","Java","C++","C_Sharp","Go","Rust","Ruby","PHP","Swift","Kotlin","Scala","R","Perl","Lua","Haskell","Clojure","Elixir","Dart","Groovy","Julia","Objective-C","Fortran","COBOL","Lisp","HTML","CSS","HTTP","HTTPS","REST","GraphQL","JSON","XML","AJAX","WebSocket","DOM","Web_development","Web_application","API","Microservices"],
+  frameworks: ["React","Vue","Angular","Svelte","Next.js","Nuxt.js","Gatsby","Remix","SolidJS","jQuery","Backbone","Ember","Meteor","React_Native","Flutter","Ionic","Electron","Node.js","Express","Django","Flask","Rails","Laravel","Spring","FastAPI","NestJS","Koa","Ruby","Python","Java","Go","Rust"],
+  databases: ["Database","SQL","NoSQL","MongoDB","PostgreSQL","MySQL","MariaDB","SQLite","Redis","Elasticsearch","Cassandra","CouchDB","Neo4j","Oracle","SQL_Server","DynamoDB","Firebase","Supabase","CockroachDB","TimescaleDB","InfluxDB","ClickHouse","Big_data","Data_warehouse"],
+  devops: ["DevOps","Docker","Kubernetes","Git","GitHub","GitLab","Bitbucket","CI_CD","Jenkins","GitHub_Actions","CircleCI","AWS","Azure","Google_Cloud","Heroku","DigitalOcean","Vercel","Netlify","Terraform","Ansible","Chef","Puppet","Helm","Istio","Prometheus","Grafana"],
+  ai_ml: ["Artificial_intelligence","Machine_learning","Deep_learning","Neural_network","Computer_vision","NLP","Reinforcement_learning","Supervised_learning","ChatGPT","LLM","GPT","BERT","Transformer","CNN","RNN","LSTM","GAN","TensorFlow","PyTorch","Keras","Scikit-learn","XGBoost","Hugging_Face","OpenAI","DeepMind","Data_science","Data_mining"],
+  security: ["Computer_security","Cybersecurity","Encryption","Cryptography","RSA","AES","TLS","SSL","SQL_injection","XSS","CSRF","Malware","Phishing","Authentication","OAuth","JWT","MFA","SSO","Firewall","VPN","Penetration_testing","OWASP"],
+  science: ["Physics","Quantum_mechanics","Relativity","Thermodynamics","Electromagnetism","Particle_physics","Cosmology","Astrophysics","Chemistry","Periodic_table","Atom","DNA","RNA","Protein","Cell","Genetics","Evolution","Climate_change","Global_warming","Renewable_energy"],
+  space: ["Astronomy","Solar_System","Sun","Mercury","Venus","Earth","Mars","Jupiter","Saturn","Uranus","Neptune","Moon","Galaxy","Black_hole","Big_Bang","Universe","NASA","SpaceX","ISS","Astronaut"],
+  history: ["World_War_I","World_War_II","Cold_War","French_Revolution","American_Revolution","Industrial_Revolution","Renaissance","Middle_Ages","Ancient_Egypt","Ancient_Greece","Ancient_Rome","Mesopotamia","Roman_Empire"],
+  health: ["COVID-19","Vaccine","Cancer","Diabetes","Mental_health","Heart_disease","Stroke","Brain","Heart","Liver","Kidney","Immune_system","Antibiotic","Nutrition","Exercise","Yoga","Meditation"],
+  business: ["Stock_market","Cryptocurrency","Bitcoin","Ethereum","Investment","Banking","Marketing","Entrepreneurship","Startup","Venture_capital","GDP","Inflation","International_trade"],
+  philosophy: ["Philosophy","Existentialism","Stoicism","Karl_Marx","Immanuel_Kant","Plato","Aristotle","Nietzsche","Sartre","Socrates","Descartes","Logic","Ethics","Metaphysics"],
+  psychology: ["Psychology","Cognitive_psychology","Freud","Depression","Anxiety","Bipolar","Schizophrenia","Intelligence","Memory","Consciousness","Emotion","Learning"],
+  literature: ["Shakespeare","Jane_Austen","Mark_Twain","Charles_Dickens","Ernest_Hemingway","George_Orwell","Harry_Potter","Lord_of_the_Rings","Don_Quixote","War_and_Peace","Iliad","Odyssey"],
+  music: ["Music","Jazz","Rock","Classical_music","Hip_hop","EDM","Mozart","Beatles","Bach","Beethoven","Michael_Jackson","Spotify","Apple_Music"],
+  movies: ["Film","The_Godfather","Star_Wars","Marvel","Netflix","Academy_Award","Animation","Horror","Sci_fi","Disney","Pixar","HBO","Prime_Video"],
+  gaming: ["Video_game","Minecraft","Fortnite","League_of_Legends","Chess","VR","Esports","PlayStation","Xbox","Nintendo","Steam","World_of_Warcraft","Call_of_Duty"],
+  countries: ["United_States","United_Kingdom","France","Germany","Italy","Spain","Russia","China","Japan","India","Brazil","Canada","Mexico","Australia","Egypt","South_Africa","Nigeria","South_Korea","Indonesia","Thailand","Vietnam","Turkey","Greece","Netherlands","Sweden","Norway"],
+  travel: ["Paris","New_York","Tokyo","London","Rome","Sydney","Barcelona","Dubai","Singapore","Berlin","Madrid","Amsterdam","Bangkok","Mumbai","Cairo","Sydney_Opera_House","Great_Wall","Machu_Picchu","Taj_Mahal","Eiffel_Tower","Colosseum","Statue_of_Liberty","Golden_Gate"],
+  food: ["Cuisine","Italian_cuisine","Chinese_cuisine","French_cuisine","Japanese_cuisine","Indian_cuisine","Mexican_cuisine","Thai_cuisine","Sushi","Pizza","Burger","Pasta","Bread","Rice","Tea","Coffee","Wine","Beer","Chocolate"],
+  sports: ["Football","Basketball","Baseball","Soccer","Tennis","Olympics","Cricket","Golf","Swimming","Marathon","NBA","NFL","FIFA","World_Cup"],
+  famous: ["Leonardo_da_Vinci","Pablo_Picasso","Van_Gogh","Albert_Einstein","Isaac_Newton","Stephen_Hawking","Nikola_Tesla","Thomas_Edison","Marie_Curie","Bill_Gates","Steve_Jobs","Elon_Musk","Mark_Zuckerberg","Barack_Obama","Abraham_Lincoln","Martin_Luther_King_Jr","Mahatma_Gandhi","Nelson_Mandela"]
 };
 
-/**
- * Flatten topics object into array
- */
-function getAllTopics(): string[] {
-  const allTopics: string[] = [];
-  for (const category of Object.values(TOPICS)) {
-    allTopics.push(...category);
-  }
-  return allTopics;
+const importedDocs: ScrapedDoc[] = [];
+
+// ==================== HELPERS ====================
+function createDoc(title: string, content: string, url: string, category: string): ScrapedDoc {
+  const doc = {
+    id: uuidv4(),
+    url,
+    title,
+    content,
+    scrapedAt: new Date().toISOString()
+  };
+  importedDocs.push(doc);
+  return doc;
 }
 
-/**
- * Fetch article content from Wikipedia API
- */
-async function fetchWikipediaArticle(title: string): Promise<{ title: string; content: string; url: string } | null> {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${title}&format=json&origin=*`;
-  
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "ApexSearchEngine/1.0 (https://github.com/your-repo; contact@example.com) WikipediaBot/1.0"
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry<T>(fn: () => Promise<T>, retries = 3): Promise<T | null> {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (i < retries - 1) await delay(1000 * (i + 1));
+    }
+  }
+  return null;
+}
+
+// ==================== IMPORTERS ====================
+async function importWikipedia(): Promise<number> {
+  console.log("📚 Importing Wikipedia articles...");
+  let count = 0;
+  const topics = Object.values(WIKIPEDIA_TOPICS).flat();
+
+  for (const topic of topics) {
+    try {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${topic}&format=json&origin=*`;
+      const res = await axios.get(url, { timeout: 10000 });
+      const pages = res.data?.query?.pages;
+      
+      if (pages) {
+        const page = pages[Object.keys(pages)[0]];
+        if (page?.extract) {
+          createDoc(
+            page.title.replace(/_/g, " "),
+            page.extract.substring(0, 20000),
+            `https://en.wikipedia.org/wiki/${topic}`,
+            "Wikipedia"
+          );
+          count++;
+        }
       }
-    });
+    } catch (e) { /* skip */ }
     
-    if (!response.ok) {
-      console.log(`  ⚠️  API error for ${title}: ${response.status}`);
-      return null;
-    }
-    
-    const contentType = response.headers.get("content-type");
-    if (!contentType?.includes("application/json")) {
-      console.log(`  ⚠️  Non-JSON response for ${title}`);
-      return null;
-    }
-    
-    const data = await response.json() as { query?: { pages: Record<string, { title: string; extract?: string }> } };
-    
-    const pages = data.query?.pages;
-    if (!pages) return null;
-    
-    const pageId = Object.keys(pages)[0];
-    const page = pages[pageId];
-    
-    // Skip if page doesn't exist
-    if (pageId === "-1" || !page.extract) {
-      console.log(`  ⚠️  No content for: ${title}`);
-      return null;
-    }
-    
-    return {
-      title: page.title.replace(/_/g, " "),
-      content: page.extract,
-      url: `https://en.wikipedia.org/wiki/${title}`
-    };
-  } catch (error) {
-    console.log(`  ❌ Error fetching ${title}:`, error);
-    return null;
+    await delay(100);
+    if (count % 50 === 0) console.log(`   ✅ ${count} articles...`);
   }
+
+  console.log(`   ✅ Wikipedia: ${count} articles`);
+  return count;
 }
 
-/**
- * Main import function
- */
-async function bulkImport() {
-  console.log("🚀 Starting bulk Wikipedia import...\n");
-  
-  const topics = getAllTopics();
-  console.log(`📚 Total topics to import: ${topics.length}\n`);
-  
-  // Load existing documents
-  const existingDocs = loadDocuments();
-  console.log(`📄 Existing documents: ${existingDocs.length}\n`);
-  
-  let successCount = 0;
-  let skipCount = 0;
-  
-  // Fetch and import each topic
-  for (let i = 0; i < topics.length; i++) {
-    const topic = topics[i];
-    process.stdout.write(`[${i + 1}/${topics.length}] Fetching: ${topic}... `);
+async function importGitHub(): Promise<number> {
+  console.log("🐙 Importing GitHub trending repos...");
+  const languages = ["javascript", "typescript", "python", "rust", "go", "java"];
+  let count = 0;
+
+  for (const lang of languages) {
+    const date = new Date();
+    date.setDate(date.getDate() - 7);
     
-    const article = await fetchWikipediaArticle(topic);
-    
-    if (article) {
-      // Add to inverted index
-      invertedIndex.addDocument({
-        id: uuidv4(),
-        url: article.url,
-        title: article.title,
-        content: article.content
-      });
-      
-      // Save to persistence
-      existingDocs.push({
-        id: uuidv4(),
-        url: article.url,
-        title: article.title,
-        content: article.content,
-        scrapedAt: new Date().toISOString()
-      });
-      
-      console.log(`✅ Added (${article.content.split(" ").length} words)`);
-      successCount++;
-    } else {
-      console.log(`⏭️  Skipped`);
-      skipCount++;
+    const res = await fetchWithRetry(() => axios.get(
+      `https://api.github.com/search/repositories?q=created:>${date.toISOString().split("T")[0]}&sort=stars&order=desc&per_page=30`,
+      { headers: { "User-Agent": "ApexSearch" }, timeout: 15000 }
+    ));
+
+    if (res?.data?.items) {
+      for (const repo of res.data.items) {
+        createDoc(
+          `${repo.name} - ${repo.language || "Code"}`,
+          `${repo.description || "No description"}\n\nLanguage: ${repo.language}\nStars: ${repo.stargazers_count}\nForks: ${repo.forks_count}\nOwner: ${repo.owner?.login}`,
+          repo.html_url,
+          "GitHub"
+        );
+        count++;
+      }
     }
-    
-    // Small delay to be nice to Wikipedia's servers
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await delay(500);
   }
+
+  console.log(`   ✅ GitHub: ${count} repos`);
+  return count;
+}
+
+async function importStackOverflow(): Promise<number> {
+  console.log("📌 Importing Stack Overflow...");
+  const tags = ["javascript", "python", "java", "typescript", "react", "node.js", "sql", "docker", "git", "css"];
+
+  for (const tag of tags) {
+    const res = await fetchWithRetry(() => axios.get(
+      `https://api.stackexchange.com/2.3/questions?order=desc&sort=activity&tagged=${tag}&pagesize=25&filter=withbody`
+    ));
+
+    if (res?.data?.items) {
+      for (const q of res.data.items) {
+        createDoc(
+          q.title,
+          `${q.title}\n\nTags: ${q.tags?.join(", ")}\nScore: ${q.score}\nAnswers: ${q.answer_count}\n${(q.body || "").substring(0, 2000)}`,
+          q.link,
+          "StackOverflow"
+        );
+      }
+    }
+    await delay(300);
+  }
+
+  console.log(`   ✅ Stack Overflow: ${importedDocs.filter(d => d.category === "StackOverflow").length} questions`);
+  return importedDocs.filter(d => d.category === "StackOverflow").length;
+}
+
+async function importHackerNews(): Promise<number> {
+  console.log("📰 Importing Hacker News...");
+  const types = ["top", "best", "new"];
+  let count = 0;
+
+  for (const type of types) {
+    const idsRes = await fetchWithRetry(() => axios.get(
+      `https://hacker-news.firebaseio.com/v0/${type}stories.json`
+    ));
+
+    if (idsRes?.data) {
+      const ids = idsRes.data.slice(0, 30);
+      for (const id of ids) {
+        const item = await fetchWithRetry(() => axios.get(
+          `https://hacker-news.firebaseio.com/v0/item/${id}.json`
+        ));
+        
+        if (item?.data?.type === "story") {
+          createDoc(
+            item.data.title,
+            `${item.data.title}\n\nBy: ${item.data.by}\nScore: ${item.data.score}\nComments: ${item.data.descendants}\nURL: ${item.data.url}`,
+            item.data.url || `https://news.ycombinator.com/item?id=${id}`,
+            "HackerNews"
+          );
+          count++;
+        }
+        await delay(50);
+      }
+    }
+  }
+
+  console.log(`   ✅ Hacker News: ${count} stories`);
+  return count;
+}
+
+async function importOpenLibrary(): Promise<number> {
+  console.log("📖 Importing Open Library...");
+  const subjects = ["science", "technology", "history", "philosophy", "literature", "art", "music", "sports", "business", "fiction"];
+  let count = 0;
+
+  for (const subject of subjects) {
+    const res = await fetchWithRetry(() => axios.get(
+      `https://openlibrary.org/subjects/${subject}.json?limit=50`
+    ));
+
+    if (res?.data?.works) {
+      for (const work of res.data.works) {
+        createDoc(
+          work.title,
+          `Title: ${work.title}\nAuthor: ${work.authors?.[0]?.name}\nSubject: ${subject}`,
+          `https://openlibrary.org${work.key}`,
+          "Books"
+        );
+        count++;
+      }
+    }
+    await delay(200);
+  }
+
+  console.log(`   ✅ Open Library: ${count} books`);
+  return count;
+}
+
+async function importPublicAPIs(): Promise<number> {
+  console.log("🌐 Importing public APIs...");
+  let count = 0;
+
+  // Countries
+  const countriesRes = await fetchWithRetry(() => axios.get(
+    "https://restcountries.com/v3.1/all?fields=name,capital,region,population,languages,currencies,flags"
+  ));
+
+  if (countriesRes?.data) {
+    for (const c of countriesRes.data.slice(0, 100)) {
+      const langs = Object.values(c.languages || {}).join(", ");
+      const currs = Object.values(c.currencies || {}).map((x: any) => x.name).join(", ");
+      createDoc(
+        `${c.name?.common} - ${c.region}`,
+        `${c.name?.common}\nCapital: ${c.capital?.[0]}\nRegion: ${c.region}\nPopulation: ${c.population?.toLocaleString()}\nLanguages: ${langs}\nCurrency: ${currs}`,
+        `https://restcountries.com/v3.1/name/${c.name?.common}`,
+        "Geography"
+      );
+      count++;
+    }
+  }
+
+  // Jokes
+  const jokeCats = ["programming", "misc", "pun"];
+  for (const cat of jokeCats) {
+    for (let i = 0; i < 5; i++) {
+      const jokeRes = await fetchWithRetry(() => axios.get(`https://v2.jokeapi.dev/joke/${cat}?type=single`));
+      if (jokeRes?.data?.joke) {
+        createDoc(`Joke: ${cat}`, jokeRes.data.joke, `https://v2.jokeapi.dev/joke/${cat}`, "Entertainment");
+        count++;
+      }
+    }
+  }
+
+  console.log(`   ✅ Public APIs: ${count} items`);
+  return count;
+}
+
+async function importDevTo(): Promise<number> {
+  console.log("💻 Importing Dev.to...");
+  const tags = ["javascript", "python", "react", "typescript", "docker", "webdev", "beginners", "tutorial"];
+  let count = 0;
+
+  for (const tag of tags) {
+    const res = await fetchWithRetry(() => axios.get(
+      `https://dev.to/api/articles?tag=${tag}&per_page=15`
+    ));
+
+    if (res?.data) {
+      for (const a of res.data) {
+        createDoc(
+          a.title,
+          `${a.title}\n\nBy: ${a.user?.name}\nReactions: ${a.public_reactions_count}\nTags: ${a.tag_list?.join(", ")}\n${a.description || ""}`,
+          a.url,
+          "DevTo"
+        );
+        count++;
+      }
+    }
+    await delay(300);
+  }
+
+  console.log(`   ✅ Dev.to: ${count} articles`);
+  return count;
+}
+
+async function importReddit(): Promise<number> {
+  console.log("🔺 Importing Reddit...");
+  const subs = ["technology", "programming", "science", "gaming", "business"];
+  let count = 0;
+
+  for (const sub of subs) {
+    const res = await fetchWithRetry(() => axios.get(
+      `https://www.reddit.com/r/${sub}/hot.json?limit=20`,
+      { headers: { "User-Agent": "ApexSearch/1.0" } }
+    ));
+
+    if (res?.data?.data?.children) {
+      for (const p of res.data.data.children) {
+        const post = p.data;
+        if (post?.selftext?.length > 30) {
+          createDoc(
+            post.title,
+            `r/${sub}: ${post.title}\n\nScore: ${post.score}\nComments: ${post.num_comments}\n${post.selftext.substring(0, 1500)}`,
+            `https://reddit.com${post.permalink}`,
+            "Reddit"
+          );
+          count++;
+        }
+      }
+    }
+    await delay(500);
+  }
+
+  console.log(`   ✅ Reddit: ${count} posts`);
+  return count;
+}
+
+// ==================== MAIN ====================
+async function runImport(source?: ImportSource): Promise<number> {
+  importedDocs.length = 0;
   
-  // Save all documents to persistence
-  console.log("\n💾 Saving to persistence...");
+  const existingDocs = loadDocuments();
+  const existingUrls = new Set(existingDocs.map(d => d.url));
+  console.log(`📄 Existing documents: ${existingDocs.length}\n`);
+
+  const importers: { name: string; fn: () => Promise<number> }[] = [
+    { name: "Wikipedia", fn: importWikipedia },
+    { name: "GitHub", fn: importGitHub },
+    { name: "Stack Overflow", fn: importStackOverflow },
+    { name: "Hacker News", fn: importHackerNews },
+    { name: "Open Library", fn: importOpenLibrary },
+    { name: "Public APIs", fn: importPublicAPIs },
+    { name: "Dev.to", fn: importDevTo },
+    { name: "Reddit", fn: importReddit },
+  ];
+
+  const sourcesToRun = source && source !== "all" 
+    ? importers.filter(i => i.name.toLowerCase().includes(source))
+    : importers;
+
+  for (const { name, fn } of sourcesToRun) {
+    try {
+      await fn();
+      await delay(500);
+    } catch (e) {
+      console.log(`   ⚠️  ${name} failed`);
+    }
+  }
+
+  // Filter duplicates
+  const uniqueDocs = importedDocs.filter(d => !existingUrls.has(d.url));
+
+  // Save
+  for (const doc of uniqueDocs) {
+    existingDocs.push({
+      id: doc.id,
+      url: doc.url,
+      title: doc.title,
+      content: doc.content,
+      scrapedAt: doc.scrapedAt
+    });
+  }
+
   saveDocuments(existingDocs);
   
-  // Save to PostgreSQL
-  console.log("💾 Saving to PostgreSQL...");
-  await saveDocumentsToCloud();
-  
-  // Rebuild Trie with all documents
-  console.log("🌳 Building autocomplete Trie...");
-  const allDocs = invertedIndex.getAllDocuments();
-  const docsArray = Array.from(allDocs.values());
-  trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text), extractPhrases);
-  
-  console.log("\n" + "=".repeat(50));
-  console.log("✅ Bulk import complete!");
-  console.log(`   Successfully imported: ${successCount}`);
-  console.log(`   Skipped: ${skipCount}`);
-  console.log(`   Total documents: ${existingDocs.length}`);
-  console.log("=".repeat(50));
+  try {
+    await saveDocumentsToCloud();
+  } catch (e) { /* skip */ }
+
+  return uniqueDocs.length;
 }
 
-// Run the import
-bulkImport().catch(console.error);
+function showStats(): void {
+  const docs = loadDocuments();
+  console.log(`\n📊 Total documents: ${docs.length}\n`);
+  
+  const categoryCount: Record<string, number> = {};
+  for (const doc of docs) {
+    const url = doc.url;
+    let cat = "Other";
+    if (url.includes("wikipedia")) cat = "Wikipedia";
+    else if (url.includes("github")) cat = "GitHub";
+    else if (url.includes("stackoverflow")) cat = "StackOverflow";
+    else if (url.includes("hacker-news")) cat = "HackerNews";
+    else if (url.includes("openlibrary")) cat = "Books";
+    else if (url.includes("dev.to")) cat = "DevTo";
+    else if (url.includes("reddit")) cat = "Reddit";
+    else if (url.includes("restcountries")) cat = "Geography";
+    categoryCount[cat] = (categoryCount[cat] || 0) + 1;
+  }
+
+  console.log("By source:");
+  for (const [cat, count] of Object.entries(categoryCount)) {
+    console.log(`  ${cat}: ${count}`);
+  }
+  console.log("");
+}
+
+// CLI
+const arg = process.argv[2] as ImportSource;
+
+if (arg === "stats") {
+  showStats();
+} else {
+  console.log("🚀 Starting data import...\n");
+  console.log("=".repeat(50));
+  
+  runImport(arg).then(count => {
+    console.log("\n" + "=".repeat(50));
+    console.log(`✅ Import complete! Added ${count} new documents.`);
+    console.log("=".repeat(50));
+    showStats();
+  }).catch(console.error);
+}
