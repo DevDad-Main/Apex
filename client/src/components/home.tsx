@@ -27,7 +27,7 @@ function Home() {
     setLoading(true);
     
     try {
-      const response = await api.search(query, page);
+      const response = await api.search(query.toLowerCase(), page);
       setSearchResults(response.results);
       setPagination(response.pagination);
       setCorrection(response.correction || null);

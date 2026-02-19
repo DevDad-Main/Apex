@@ -61,7 +61,7 @@ export default function SearchResults({
       setLoadingSuggestions(true);
       debounceRef.current = setTimeout(async () => {
         try {
-          const res = await api.autocomplete(query);
+          const res = await api.autocomplete(query.toLowerCase());
           setSuggestions(res);
         } catch {
           setSuggestions([]);
@@ -84,14 +84,14 @@ export default function SearchResults({
     e.preventDefault();
     if (query.trim()) {
       setShowSuggestions(false);
-      onSearch(query);
+      onSearch(query.toLowerCase());
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     setShowSuggestions(false);
-    onSearch(suggestion);
+    onSearch(suggestion.toLowerCase());
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -394,13 +394,13 @@ export default function SearchResults({
               )}
             </>
           ) : (
-            results?.length > 0 ? `About ${results.length} results` : ''
+            results?.length > 0 ? `About ${results?.length} results` : ''
           )}
         </motion.div>
 
         <div className="space-y-8">
           {/* Correction suggestion - show prominently at top */}
-          {correction && results.length > 0 && (
+          {correction && results && results.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -412,7 +412,7 @@ export default function SearchResults({
               >
                 Showing results for "{initialQuery}". Did you mean{" "}
                 <button 
-                  onClick={() => onSearch(correction)}
+                  onClick={() => correction && onSearch(correction.toLowerCase())}
                   className="font-medium underline hover:no-underline"
                 >
                   "{correction}"
@@ -477,7 +477,7 @@ export default function SearchResults({
             </p>
             {correction && (
               <button
-                onClick={() => onSearch(correction)}
+                onClick={() => onSearch(correction.toLowerCase())}
                 className="block w-full max-w-xs mx-auto mt-4 px-6 py-3 
                          bg-[#3D5A4C] dark:bg-[#4a6b5c] 
                          text-white rounded-xl text-base font-medium

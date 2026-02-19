@@ -62,7 +62,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
         try {
           abortControllerRef.current = new AbortController();
           console.log('Fetching autocomplete for:', query);
-          const results = await api.autocomplete(query, abortControllerRef.current.signal);
+          const results = await api.autocomplete(query.toLowerCase(), abortControllerRef.current.signal);
           console.log('Got results:', results.length);
           // Only show suggestions if we got results and query still matches
           if (results.length > 0) {
@@ -100,7 +100,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     e.preventDefault();
     if (query.trim()) {
       setShowSuggestions(false);
-      onSearch(query);
+      onSearch(query.toLowerCase());
     }
   };
 
@@ -122,19 +122,19 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
       const searchQuery = typeof item === 'string' ? item : item.query;
       setQuery(searchQuery);
       setShowSuggestions(false);
-      onSearch(searchQuery);
+      onSearch(searchQuery.toLowerCase());
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
     setShowSuggestions(false);
-    onSearch(suggestion);
+    onSearch(suggestion.toLowerCase());
   };
 
   const handleHistoryClick = (item: SearchHistoryItem) => {
     setShowSuggestions(false);
-    onSearch(item.query);
+    onSearch(item.query.toLowerCase());
   };
 
   const handleDeleteHistory = (e: React.MouseEvent, query: string) => {
