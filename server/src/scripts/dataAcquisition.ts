@@ -6,15 +6,15 @@
  * 
  * Usage: 
  *   npx tsx src/scripts/dataAcquisition.ts       # Run all importers
- *   npx tsx src/scripts/dataAcquisition.ts wiki # Wikipedia only
- *   npx tsx src/scripts/dataAcquisition.ts stats     # Show stats
- *   npx tsx src/scripts/dataAcquisition.ts rebuild   # Rebuild search index
+ *   npx tsx src/scripts/dataAcquisition.ts wiki   # Wikipedia only
+ *   npx tsx src/scripts/dataAcquisition.ts stats  # Show stats
+ *   npx tsx src/scripts/dataAcquisition.ts rebuild # Rebuild search index
  * 
  * @module scripts/dataAcquisition
  */
 
 import "dotenv/config";
-import { loadDocuments, saveDocuments, saveDocumentsToCloud } from "../scraper/persistence.js";
+import { loadDocuments } from "../scraper/persistence.js";
 import { invertedIndex } from "../index/invertedIndex.js";
 import { trie } from "../autocomplete/trie.js";
 import tokenizer, { extractPhrases } from "../textProcessor/tokenizer.js";
@@ -30,7 +30,6 @@ function printStats(): void {
   console.log(`\n📄 Documents in storage: ${docs.length}`);
   console.log(`🌳 Documents in index: ${indexDocs.size}\n`);
 
-  // Count by source
   const sourceCount: Record<string, number> = {};
   for (const doc of docs) {
     const url = doc.url;
@@ -78,22 +77,23 @@ function rebuildIndex(): void {
 // CLI
 const arg = process.argv[2];
 
-switch (arg) {
-  case "stats":
-    printStats();
-    break;
-    
-  case "rebuild":
-    rebuildIndex();
-    break;
-    
-  case undefined:
-  case "all":
-    // Run bulkImport
-    import("./bulkImport.js").then(({ runImport }) => runImport("all")).catch(console.error);
-    break;
-    
-  default:
-    // Run specific importer
-    import("./bulkImport.js").then(({ runImport }) => runImport(arg)).catch(console.error);
+async function main() {
+  switch (arg) {
+    case "stats":
+      printStats();
+      break;
+      
+    case "rebuild":
+      rebuildIndex();
+      break;
+      
+    case undefined:
+    case "all":
+    default: {
+      const { runImport } = await import("./bulkImport.js");
+      await runImport(arg as any);
+    }
+  }
 }
+
+main().catch(console.error);

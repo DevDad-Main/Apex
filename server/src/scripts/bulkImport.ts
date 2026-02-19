@@ -30,6 +30,7 @@ interface ScrapedDoc {
   url: string;
   title: string;
   content: string;
+  category?: string;
   scrapedAt: string;
 }
 
@@ -346,7 +347,7 @@ async function importReddit(): Promise<number> {
 }
 
 // ==================== MAIN ====================
-async function runImport(source?: ImportSource): Promise<number> {
+export async function runImport(source?: ImportSource): Promise<number> {
   importedDocs.length = 0;
   
   const existingDocs = loadDocuments();
@@ -427,15 +428,15 @@ function showStats(): void {
 }
 
 // CLI
-const arg = process.argv[2] as ImportSource;
+const arg = process.argv[2];
 
 if (arg === "stats") {
   showStats();
-} else {
+} else if (arg === "run" || !arg) {
   console.log("🚀 Starting data import...\n");
   console.log("=".repeat(50));
   
-  runImport(arg).then(count => {
+  runImport(arg as ImportSource).then(count => {
     console.log("\n" + "=".repeat(50));
     console.log(`✅ Import complete! Added ${count} new documents.`);
     console.log("=".repeat(50));
