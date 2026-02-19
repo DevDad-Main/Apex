@@ -87,7 +87,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const activeList = query.length > 0 ? suggestions : history;
+    const activeList = query.length > 0 ? suggestions : history.slice(0, 5);
     if (activeList.length === 0) return;
 
     if (e.key === 'ArrowDown') {
@@ -261,7 +261,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                     Clear all
                   </button>
                 </div>
-                {history.map((item, index) => (
+                {history.slice(0, 5).map((item, index) => (
                   <div
                     key={item.query}
                     className={`
