@@ -19,10 +19,10 @@ searchRouter.get(
 
     res.set("Cache-Control", "no-store, no-cache, must-revalidate");
 
-    logger.info("Search handler called with query: ... ", {
-      Query: req.query,
-      IP: req.ip,
-    });
+    // logger.info("Search handler called with query: ... ", {
+    //   Query: req.query,
+    //   IP: req.ip,
+    // });
 
     if (!query) {
       return sendError(res, "Invalid query.", 400);
@@ -47,7 +47,10 @@ searchRouter.get(
       const correction = findClosestTerm(query as string);
       return sendSuccess(
         res,
-        { response: { ...response, meta: { responseTimeMs: responseTime } }, correction },
+        {
+          response: { ...response, meta: { responseTimeMs: responseTime } },
+          correction,
+        },
         `No results found for this query. Did you mean: ${correction}?`,
         200,
       );

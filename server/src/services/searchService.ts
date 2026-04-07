@@ -3,6 +3,7 @@ import { invertedIndex } from "../index/invertedIndex.js";
 import { getRedisClient } from "../utils/redis.utils.js";
 import { searchHistoryService } from "./searchHistory.js";
 import { MinHeap } from "../autocomplete/minHeap.js";
+import { termCooccurrenceGraph } from "../graph/termCooccurrenceGraph.js";
 
 class SearchService {
   //#region Search
@@ -21,7 +22,12 @@ class SearchService {
     }
 
     // Search the index
-    const results = invertedIndex.search(query);
+    // const results = invertedIndex.search(query);
+
+    const expandedTerms = termCooccurrenceGraph.expandQuery(query);
+    console.log(`Expanded Terms: `, expandedTerms);
+    const expandedQuery = expandedTerms.join(" ");
+    const results = invertedIndex.search(expandedQuery);
 
     // Get full documents for each result
     const resultsWithDocs = results.map((result) => {
