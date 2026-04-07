@@ -1,5 +1,6 @@
 import removeStopWords from "../textProcessor/stopWords.js";
 import tokenizer from "../textProcessor/tokenizer.js";
+import { termCooccurrenceConfig } from "./config.js";
 
 interface DocumentInput {
   content: string;
@@ -8,6 +9,42 @@ interface DocumentInput {
 
 class TermCooccurrenceGraph {
   private data: Map<string, Map<string, number>> = new Map();
+
+  private config = termCooccurrenceConfig;
+
+  private addPairs(uniqueTokens: string[]): void {
+    //NOTE: Nothing to pair
+    if (uniqueTokens.length < 2) return;
+
+    for (let i = 0; i < uniqueTokens.length; i++) {
+      const windowEnd = Math.min(
+        i + this.config.windowSize,
+        uniqueTokens.length,
+      );
+      for (let j = i + 1; j < windowEnd; j++) {
+        const termA = uniqueTokens[i];
+        const termB = uniqueTokens[j];
+
+        // Get existing related terms map or create empty one
+        let relatedToA = this.data.get(termA);
+        if (!relatedToA) {
+          relatedToA = new Map();
+          this.data.set(termA, relatedToA);
+        }
+        // Get existing weight or default to 0
+        const weight = relatedToA.get(termB) || 0;
+        relatedToA.set(termB, weight + 1);
+        // Make it bidirectional (termB → termA)
+        let relatedToB = this.data.get(termB);
+        if (!relatedToB) {
+          relatedToB = new Map();
+          this.data.set(termB, relatedToB);
+        }
+        const weightB = relatedToB.get(termA) || 0;
+        relatedToB.set(termA, weightB + 1);
+      }
+    }
+  }
 
   constructor() {}
 
@@ -41,33 +78,7 @@ class TermCooccurrenceGraph {
     // NOTE: Deduplicate
     const uniqueTokens = [...new Set(tokens)];
 
-    //NOTE: Nothing to pair
-    if (uniqueTokens.length < 2) return;
-
-    for (let i = 0; i < uniqueTokens.length; i++) {
-      for (let j = i + 1; j < uniqueTokens.length; j++) {
-        const termA = uniqueTokens[i];
-        const termB = uniqueTokens[j];
-
-        // Get existing related terms map or create empty one
-        let relatedToA = this.data.get(termA);
-        if (!relatedToA) {
-          relatedToA = new Map();
-          this.data.set(termA, relatedToA);
-        }
-        // Get existing weight or default to 0
-        const weight = relatedToA.get(termB) || 0;
-        relatedToA.set(termB, weight + 1);
-        // Make it bidirectional (termB → termA)
-        let relatedToB = this.data.get(termB);
-        if (!relatedToB) {
-          relatedToB = new Map();
-          this.data.set(termB, relatedToB);
-        }
-        const weightB = relatedToB.get(termA) || 0;
-        relatedToB.set(termA, weightB + 1);
-      }
-    }
+    this.addPairs(uniqueTokens);
   }
   // #endregion
 
@@ -87,7 +98,9 @@ class TermCooccurrenceGraph {
     //NOTE: The same as pairs.map((t)=> t[0])
     // NOTE: Just destructure the first element in the array from our pairs as they are [key,value pairs]
     const result = pairs.map(([t]) => t);
-    return limit ? result.slice(0, limit) : result;
+    const effectiveLimit = limit ?? this.config.maxRelatedTerms;
+
+    return result.slice(0, effectiveLimit);
   }
   // #endregion
 
@@ -107,9 +120,11 @@ class TermCooccurrenceGraph {
     // NOTE: Tokenize and filter stop words
     const tokens = removeStopWords(tokenizer(query));
 
+    const effectiveTopK = topK ?? this.config.queryExpansionLimit;
+
     // NOTE: Get related terms (flattened) && Empty array check if nothing is returned
     const relatedTerms = tokens.flatMap((token) => {
-      return this.getRelatedTerms(token, topK) ?? [];
+      return this.getRelatedTerms(token, effectiveTopK) ?? [];
     });
 
     // Spread and return the original tokens and our new related terms
@@ -123,16 +138,32 @@ class TermCooccurrenceGraph {
   buildFromDocuments(docs: DocumentInput[]): void {
     // NOTE: Reset the graph before re building with new data
     if (docs.length === 0) return;
-
     this.reset();
+
+    // NOTE: Count Frequencies
+    const docFreq = new Map<string, number>();
+
+    for (const doc of docs) {
+      const tokens = removeStopWords(tokenizer(doc.content));
+      const unique = [...new Set(tokens)];
+      for (const token of unique) {
+        docFreq.set(token, (docFreq.get(token) || 0) + 1);
+      }
+    }
 
     for (const doc of docs) {
       const fullText = doc.title ? `${doc.title} ${doc.content}` : doc.content;
+      const tokens = removeStopWords(tokenizer(fullText));
 
-      this.addDocument(fullText);
+      // Filter to only frequent terms
+      const frequentTerms = tokens.filter(
+        (token) => (docFreq.get(token) || 0) >= this.config.minTermFrequency,
+      );
+
+      const uniqueFrequent = [...new Set(frequentTerms)];
+
+      this.addPairs(uniqueFrequent);
     }
-
-    // NOTE: Potentially later add a minweight to the config so we can filter out irrelevant matches
   }
   // #endregion
 
@@ -169,24 +200,24 @@ class TermCooccurrenceGraph {
 
 export const termCooccurrenceGraph = new TermCooccurrenceGraph();
 
-termCooccurrenceGraph.addDocument(
-  "The quick brown fox jumps over the lazy dog",
-);
-termCooccurrenceGraph.addDocument("The fox is quick and clever");
-termCooccurrenceGraph.addDocument("Lazy dogs don't jump over clever foxes");
-termCooccurrenceGraph.addDocument("A brown dog and a clever fox are friends");
+// termCooccurrenceGraph.addDocument(
+//   "The quick brown fox jumps over the lazy dog",
+// );
+// termCooccurrenceGraph.addDocument("The fox is quick and clever");
+// termCooccurrenceGraph.addDocument("Lazy dogs don't jump over clever foxes");
+// termCooccurrenceGraph.addDocument("A brown dog and a clever fox are friends");
 
-console.log(`Number of unique Terms: `, termCooccurrenceGraph.size());
+// console.log(`Number of unique Terms: `, termCooccurrenceGraph.size());
 
-console.log("Related to 'fox':", termCooccurrenceGraph.getRelatedTerms("fox"));
-console.log("Related to 'dog':", termCooccurrenceGraph.getRelatedTerms("dog"));
-console.log(
-  "Related to 'clever':",
-  termCooccurrenceGraph.getRelatedTerms("clever"),
-);
+// console.log("Related to 'fox':", termCooccurrenceGraph.getRelatedTerms("fox"));
+// console.log("Related to 'dog':", termCooccurrenceGraph.getRelatedTerms("dog"));
+// console.log(
+//   "Related to 'clever':",
+//   termCooccurrenceGraph.getRelatedTerms("clever"),
+// );
 
-console.log(
-  "Top 2 related to 'fox':",
-  termCooccurrenceGraph.getRelatedTerms("fox", 2),
-);
+// console.log(
+//   "Top 2 related to 'fox':",
+//   termCooccurrenceGraph.getRelatedTerms("fox", 2),
+// );
 // Example output: ["clever", "quick"]
