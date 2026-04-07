@@ -7,6 +7,7 @@ import { prisma } from "./lib/prisma.js";
 import { trie } from "./autocomplete/trie.js";
 import tokenizer, { extractPhrases } from "./textProcessor/tokenizer.js";
 import { initializeRedisClient } from "./utils/redis.utils.js";
+import { termCooccurrenceGraph } from "./graph/termCooccurrenceGraph.js";
 
 await prisma.$connect();
 logger.info("Connected to PostgreSQL");
@@ -35,7 +36,15 @@ const PORT = process.env.PORT || 8000;
     // Build autocomplete Trie from all documents
     const allDocs = invertedIndex.getAllDocuments();
     const docsArray = Array.from(allDocs.values());
-    trie.buildFromDocuments(docsArray, (text: string) => tokenizer(text), extractPhrases);
+    trie.buildFromDocuments(
+      docsArray,
+      (text: string) => tokenizer(text),
+      extractPhrases,
+    );
+    // NOTE: Initialize Graph
+    termCooccurrenceGraph.buildFromDocuments(docsArray);
+    logger.info(`Built term co-occurrence graph`);
+
     logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
 
     await initializeRedisClient();

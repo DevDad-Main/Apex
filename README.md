@@ -26,6 +26,7 @@ A minimal, fast search engine built with modern web technologies. Apex uses adva
 ## Tech Stack
 
 ### Frontend
+
 - **React 18** - UI framework
 - **TypeScript** - Type safety
 - **Vite** - Build tool
@@ -43,6 +44,7 @@ A minimal, fast search engine built with modern web technologies. Apex uses adva
 - **React Resizable Panels** - Flexible layouts
 
 ### Backend
+
 - **Express.js 5** - Web framework
 - **TypeScript** - Type safety
 - **MongoDB** - Primary document storage
@@ -59,11 +61,13 @@ A minimal, fast search engine built with modern web technologies. Apex uses adva
 ## Screenshots
 
 ### Search Results
+
 <p align="center">
   <img src="previews/Apex Search.png" alt="Apex Search Results" width="100%"/>
 </p>
 
 ### History & Suggestions
+
 <p align="center">
   <img src="previews/apex-history.png" alt="Search History" width="100%"/>
   <img src="previews/apex-suggestions-search-results.png" alt="Search Suggestions" width="100%"/>
@@ -72,12 +76,14 @@ A minimal, fast search engine built with modern web technologies. Apex uses adva
 </p>
 
 ### Dark Mode
+
 <p align="center">
   <img src="previews/apex-dark-mode-history.png" alt="Dark Mode History" width="100%"/>
   <img src="previews/apex-dark-mode-redis-caching.png" alt="Dark Mode Redis Caching" width="100%"/>
 </p>
 
 ### Settings & Privacy
+
 <p align="center">
   <img src="previews/apex-settings.png" alt="Settings" width="100%"/>
   <img src="previews/apex-privacy.png" alt="Privacy" width="100%"/>
@@ -98,12 +104,14 @@ A minimal, fast search engine built with modern web technologies. Apex uses adva
 ### Installation
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/DevDad-Main/Apex.git
 cd Apex
 ```
 
 2. Install dependencies:
+
 ```bash
 # Install client dependencies
 cd client
@@ -117,6 +125,7 @@ npm install
 3. Configure environment variables:
 
 **Server** (`.env` in server folder):
+
 ```env
 MONGO_URI=your_mongodb_connection_string
 REDIS_URL=your_redis_url
@@ -124,6 +133,7 @@ PORT=3000
 ```
 
 **Client** (`.env` in client folder):
+
 ```env
 VITE_API_URL=http://localhost:3000
 ```
@@ -156,15 +166,15 @@ npm run build
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/apex/search?query=<query>&page=<page>` | Search for documents |
-| GET | `/apex/autocomplete?q=<prefix>` | Get search suggestions |
-| POST | `/apex/scrape` | Scrape and index a URL |
-| GET | `/apex/document/:id` | Get a specific document |
-| GET | `/apex/document` | Get all documents |
-| DELETE | `/apex/document` | Delete all documents |
-| GET | `/` | Health check endpoint |
+| Method | Endpoint                                 | Description             |
+| ------ | ---------------------------------------- | ----------------------- |
+| GET    | `/apex/search?query=<query>&page=<page>` | Search for documents    |
+| GET    | `/apex/autocomplete?q=<prefix>`          | Get search suggestions  |
+| POST   | `/apex/scrape`                           | Scrape and index a URL  |
+| GET    | `/apex/document/:id`                     | Get a specific document |
+| GET    | `/apex/document`                         | Get all documents       |
+| DELETE | `/apex/document`                         | Delete all documents    |
+| GET    | `/`                                      | Health check endpoint   |
 
 ### Example Requests
 
@@ -184,6 +194,7 @@ curl -X POST "http://localhost:3000/apex/scrape" \
 ## Architecture
 
 ### Search Flow
+
 1. User enters a search query
 2. Frontend sends request to `/apex/search`
 3. Backend checks Redis cache first
@@ -212,11 +223,13 @@ curl -X POST "http://localhost:3000/apex/scrape" \
 ## Data Management
 
 ### Local Storage
+
 - Search history stored in browser localStorage
 - User preferences (dark mode, safe search, history toggle) persisted locally
 - Data export functionality to download all user data as JSON
 
 ### Server Storage
+
 - MongoDB for document storage and search indexing
 - PostgreSQL with Prisma as alternative ORM option
 - Redis for caching search results
