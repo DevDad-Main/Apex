@@ -41,7 +41,6 @@
     "express": "^5.2.1",
     "helmet": "^8.1.0",
     "hpp": "^0.2.3",
-    "jaccard-similarity-sentences": "^1.0.2",
     "mongoose": "^9.2.1",
     "pg": "^8.18.0",
     "prisma": "^7.4.0",

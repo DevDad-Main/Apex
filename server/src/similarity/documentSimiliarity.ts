@@ -1,7 +1,14 @@
-import jaccard from "jaccard-similarity-sentences";
-import { Document } from "../generated/client.js";
+import { MinHeap } from "../autocomplete/minHeap.js";
+import { Jaccard } from "./jaccard.js";
 
-interface SimiliarDoc {
+interface DocumentInput {
+  id: string;
+  content: string;
+  title: string;
+  url: string;
+}
+
+export interface SimiliarDoc {
   id: string;
   title: string;
   url: string;
@@ -25,44 +32,101 @@ class DocumentSimilarity {
     TOP_K: 10,
   });
 
+  private jaccard = new Jaccard();
+  private tokenCache = new Map<string, Set<string>>();
+
+  private buildTokenCache(docs: DocumentInput[]): void {
+    this.tokenCache.clear();
+    for (const doc of docs) {
+      const words = doc.content.toLowerCase().split(/\s+/);
+      this.tokenCache.set(doc.id, new Set(words));
+    }
+  }
+
+  private getTokens(docId: string): Set<string> | undefined {
+    return this.tokenCache.get(docId);
+  }
+
   /**
    * Get similarity between two documents
    */
-  getSimilarity(docA: Document, docB: Document): number {
-    return jaccard.jaccardSimilarity(docA.content, docB.content);
+  getSimilarity(docIdA: string, docIdB: string): number {
+    const setA = this.getTokens(docIdA);
+    const setB = this.getTokens(docIdB);
+
+    if (!setA || !setB) return 0;
+
+    return this.jaccard.jaccardSimilarityFromSets(setA, setB);
   }
 
   /**
    * Find top-k similiar documents to a given document
+   * NOTE: Cache must be built first using buildTokenCache()
    */
-  findSimiliar(docId: string, docs: Document[], topK: number): SimiliarDoc[] {
+  findSimiliar(
+    docId: string,
+    docs: DocumentInput[],
+    topK: number,
+  ): SimiliarDoc[] {
     const base = docs.find((d) => d.id === docId);
-    let similiarDocs: SimiliarDoc[] = [];
+    if (!base) return [];
 
-    docs.forEach((doc) => {
-      // Skip the same document
-      if (doc.id === base?.id) return;
+    const heap = new MinHeap<SimiliarDoc>(
+      (a, b) => b.similarityScore - a.similarityScore,
+    );
 
-      const similarityScore = this.getSimilarity(base, doc);
+    for (const doc of docs) {
+      if (doc.id === base.id) continue;
+
+      const similarityScore = this.getSimilarity(base.id, doc.id);
 
       if (similarityScore >= this.config.MIN_SIMILARITY) {
-        similiarDocs.push({
+        heap.push({
           id: doc.id,
           title: doc.title,
           url: doc.url,
           similarityScore,
         });
       }
-    });
 
-    console.log(`Similiar Docs: `, similiarDocs);
+      if (heap.size > topK) {
+        heap.pop();
+      }
+    }
 
-    // Sort by score descending, then slice
-    // Performance between the default sort and a min heap. Refactor later if we see a performance hit.
-    // | Sort | O(1700 × log 1700) | ~15,000 |
-    // | MinHeap | O(1700 × log 10) | ~5,600 |
-    return similiarDocs
-      .sort((a, b) => b.similarityScore - a.similarityScore)
-      .slice(0, topK);
+    const results: SimiliarDoc[] = [];
+    while (heap.size > 0) {
+      results.push(heap.pop()!);
+    }
+
+    return results.sort((a, b) => b.similarityScore - a.similarityScore);
+  }
+
+  /**
+   * Build similarity index for all documents at once
+   * Builds token cache once, then computes similarities with progress logging
+   */
+  buildAllSimilarities(
+    docs: DocumentInput[],
+    topK: number,
+    onProgress?: (current: number, total: number) => void,
+  ): Map<string, SimiliarDoc[]> {
+    this.buildTokenCache(docs);
+
+    const results = new Map<string, SimiliarDoc[]>();
+
+    for (let i = 0; i < docs.length; i++) {
+      const doc = docs[i];
+      const similar = this.findSimiliar(doc.id, docs, topK);
+      results.set(doc.id, similar);
+
+      if (onProgress && i % 50 === 0) {
+        onProgress(i, docs.length);
+      }
+    }
+
+    return results;
   }
 }
+
+export const documentSimilarity = new DocumentSimilarity();

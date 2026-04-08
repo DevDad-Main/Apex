@@ -8,11 +8,16 @@ import { trie } from "./autocomplete/trie.js";
 import tokenizer, { extractPhrases } from "./textProcessor/tokenizer.js";
 import { initializeRedisClient } from "./utils/redis.utils.js";
 import { termCooccurrenceGraph } from "./graph/termCooccurrenceGraph.js";
+import {
+  documentSimilarity,
+  SimiliarDoc,
+} from "./similarity/documentSimiliarity.js";
 
 await prisma.$connect();
 logger.info("Connected to PostgreSQL");
 
 const PORT = process.env.PORT || 8000;
+const TOP_K = 10;
 
 (async () => {
   try {
@@ -36,19 +41,38 @@ const PORT = process.env.PORT || 8000;
     // Build autocomplete Trie from all documents
     const allDocs = invertedIndex.getAllDocuments();
     const docsArray = Array.from(allDocs.values());
+
     trie.buildFromDocuments(
       docsArray,
       (text: string) => tokenizer(text),
       extractPhrases,
     );
+
     // NOTE: Initialize Graph
     termCooccurrenceGraph.buildFromDocuments(docsArray);
     logger.info(`Built term co-occurrence graph`);
 
+    // NOTE: Build Document similarity index
+    logger.info(`Building similarity index for ${docsArray.length} documents...`);
+
+    const similarityMap = documentSimilarity.buildAllSimilarities(
+      docsArray,
+      TOP_K,
+      (current, total) => {
+        logger.info(`Similarity progress: ${current}/${total}`);
+      },
+    );
+
+    logger.info(`Built similarity index for ${docsArray.length} documents`);
+
     logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
 
-    await initializeRedisClient();
+    const client = await initializeRedisClient();
     logger.info("Redis client initialized");
+
+    for (const [docId, similarDocs] of similarityMap) {
+      await client.set(`similar:${docId}`, JSON.stringify(similarDocs));
+    }
 
     // Start the server
     app.listen(PORT, () => {
