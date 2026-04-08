@@ -66,7 +66,17 @@ export async function initializeRedisClient() {
       });
 
       await _client.connect();
+
+      // Initialize bloom filter
+      try {
+        // NOTE: Values need to be adjusted per users needs, but we have max 2000 documents so this should be fine
+        await _client.sendCommand(["BF.RESERVE", "bloom:urls", "0.01", "5000"]);
+        logger.info("Bloom filter initialized");
+      } catch {
+        // Filter already exists - that's fine
+      }
     }
+
     return _client;
   } catch (error) {
     logger.error("Failed to connect to redis server..", { error });

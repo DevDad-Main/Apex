@@ -1,7 +1,7 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { PrivateKeyExportOptions } from "node:crypto";
 import { v7 as uuidv7 } from "uuid";
+import { getRedisClient } from "../utils/redis.utils.js";
 
 interface ScrapedDocument {
   id: string;
@@ -61,7 +61,20 @@ function parseDocument(html: string, url: string): ScrapedDocument {
   };
 }
 
-export async function scrapeUrl(url: string): Promise<ScrapedDocument> {
+export async function scrapeUrl(url: string): Promise<ScrapedDocument | null> {
+  const client = getRedisClient();
+  const exists = await client.sendCommand(["BF.EXISTS", "bloom:urls", url]);
+
+  if (exists) {
+    return null; // Skip silently
+  }
+
+  // Fetch and parse
   const html = await fetchHtml(url);
-  return parseDocument(html, url);
+  const doc = parseDocument(html, url);
+
+  //NOTE: Add it to our bloom filter
+  await client.sendCommand(["BF.ADD", "bloom:urls", url]);
+
+  return doc;
 }
