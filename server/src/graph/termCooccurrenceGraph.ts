@@ -120,6 +120,12 @@ class TermCooccurrenceGraph {
     // NOTE: Tokenize and filter stop words
     const tokens = removeStopWords(tokenizer(query));
 
+    // Skip expansion for short tokens (prevents "java" → "javascript")
+    const hasShortToken = tokens.some((t) => t.length < this.config.minQueryLength);
+    if (hasShortToken) {
+      return tokens;
+    }
+
     const effectiveTopK = topK ?? this.config.queryExpansionLimit;
 
     // NOTE: Get related terms (flattened) && Empty array check if nothing is returned

@@ -52,26 +52,40 @@ const TOP_K = 10;
     termCooccurrenceGraph.buildFromDocuments(docsArray);
     logger.info(`Built term co-occurrence graph`);
 
-    // NOTE: Build Document similarity index
-    logger.info(`Building similarity index for ${docsArray.length} documents...`);
-
-    const similarityMap = documentSimilarity.buildAllSimilarities(
-      docsArray,
-      TOP_K,
-      (current, total) => {
-        logger.info(`Similarity progress: ${current}/${total}`);
-      },
-    );
-
-    logger.info(`Built similarity index for ${docsArray.length} documents`);
-
     logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
 
+    // Check if similarity data already exists in Redis
     const client = await initializeRedisClient();
-    logger.info("Redis client initialized");
+    const cached = await client.get("similar:indexBuilt");
 
-    for (const [docId, similarDocs] of similarityMap) {
-      await client.set(`similar:${docId}`, JSON.stringify(similarDocs));
+    if (cached) {
+      logger.info("Similarity index already exists in Redis, skipping rebuild");
+    } else {
+      const similarityMap = documentSimilarity.buildAllSimilarities(
+        docsArray,
+        TOP_K,
+        (current, total) => {
+          logger.info(`Similarity progress: ${current}/${total}`);
+        },
+      );
+
+      // NOTE: Build Document similarity index
+      logger.info(
+        `Building similarity index for ${docsArray.length} documents...`,
+      );
+
+      logger.info(`Built similarity index for ${docsArray.length} documents`);
+
+      // Store in Redis
+      for (const [docId, similarDocs] of similarityMap) {
+        await client.set(`similar:${docId}`, JSON.stringify(similarDocs));
+      }
+
+      // Mark as built
+      await client.set(
+        "similar:indexBuilt",
+        JSON.stringify({ builtAt: Date.now() }),
+      );
     }
 
     // Start the server

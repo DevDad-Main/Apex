@@ -21,10 +21,18 @@ export interface PaginationInfo {
   totalPages: number;
 }
 
+export interface SimilarDoc {
+  id: string;
+  title: string;
+  url: string;
+  similarityScore: number;
+}
+
 export interface SearchResponse {
   results: SearchResult[];
   pagination: PaginationInfo;
   correction?: string;
+  related?: SimilarDoc[];
   meta?: {
     responseTimeMs: number;
   };
@@ -57,7 +65,7 @@ export interface AutocompleteResponse {
 }
 
 const api = {
-  search: async (query: string, page = 1, limit = 10): Promise<{ results: SearchResult[]; pagination: PaginationInfo; correction?: string; responseTimeMs: number }> => {
+  search: async (query: string, page = 1, limit = 10): Promise<{ results: SearchResult[]; pagination: PaginationInfo; correction?: string; related?: SimilarDoc[]; responseTimeMs: number }> => {
     const response = await apiClient.get<{ success: boolean; data: SearchResponse; message: string }>("/search", {
       params: { query, page, limit },
     });
@@ -65,6 +73,7 @@ const api = {
       results: response.data.data.results,
       pagination: response.data.data.pagination,
       correction: response.data.data.correction,
+      related: response.data.data.related,
       responseTimeMs: response.data.data.meta?.responseTimeMs ?? 0,
     };
   },
@@ -103,6 +112,11 @@ const api = {
     const response = await apiClient.get<{ success: boolean; data: SearchResponse; message: string }>("/search/random", {
       params: { limit },
     });
+    return response.data.data;
+  },
+
+  getSimilar: async (docId: string): Promise<SimilarDoc[]> => {
+    const response = await apiClient.get<{ success: boolean; data: SimilarDoc[]; message: string }>(`/similiar/${docId}`);
     return response.data.data;
   },
 };

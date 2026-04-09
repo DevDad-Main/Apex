@@ -5,6 +5,7 @@ import searchRouter from "./routes/search.routes.js";
 import scrapeRouter from "./routes/scrape.routes.js";
 import documentsRouter from "./routes/documents.routes.js";
 import autocompleteRouter from "./routes/trie.routes.js";
+import similair from "./routes/similair.routes.js";
 import compression from "compression";
 import hpp from "hpp";
 import helmet from "helmet";
@@ -147,6 +148,7 @@ app.use("/apex/search", searchRouter);
 app.use("/apex/scrape", scrapeRouter);
 app.use("/apex/document", documentsRouter);
 app.use("/apex/autocomplete", autocompleteRouter);
+app.use("/apex/similiar", similair);
 
 app.use("/", (req: Request, res: Response) => {
   return sendSuccess(res, {}, "Server is up and running!");

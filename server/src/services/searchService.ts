@@ -4,11 +4,15 @@ import { getRedisClient } from "../utils/redis.utils.js";
 import { searchHistoryService } from "./searchHistory.js";
 import { MinHeap } from "../autocomplete/minHeap.js";
 import { termCooccurrenceGraph } from "../graph/termCooccurrenceGraph.js";
+import { similarityService, SimiliarDoc } from "./similarityService.js";
+
+// Cache version - change this to bust old cache
+const CACHE_VERSION = "v2";
 
 class SearchService {
   //#region Search
   async search(query: string, page = 1, limit = 10) {
-    const cacheKey = `search:${query}:${page}:${limit}`;
+    const cacheKey = `search:${CACHE_VERSION}:${query}:${page}:${limit}`;
 
     // Try to get from cache first - returns immediately if hit
     try {
@@ -46,6 +50,29 @@ class SearchService {
     const endIndex = startIndex + limit;
     const paginatedResults = resultsWithDocs.slice(startIndex, endIndex);
 
+    // Get related documents for the top 3 results
+    const topResults = results.slice(0, 3);
+    const topDocIds = topResults.map((r) => r.documentId);
+    const similarDocsMap = await similarityService.getSimiliarDocumentsForMany(topDocIds);
+
+    // Aggregate and deduplicate related docs
+    const relatedDocs: SimiliarDoc[] = [];
+    const seenIds = new Set<string>();
+
+    for (const docs of similarDocsMap.values()) {
+      for (const doc of docs) {
+        if (!seenIds.has(doc.id)) {
+          seenIds.add(doc.id);
+          relatedDocs.push(doc);
+        }
+      }
+    }
+
+    // Sort by score and limit to top 5
+    const related = relatedDocs
+      .sort((a, b) => b.similarityScore - a.similarityScore)
+      .slice(0, 5);
+
     const response = {
       results: paginatedResults,
       pagination: {
@@ -54,6 +81,7 @@ class SearchService {
         limit,
         totalPages: Math.ceil(results.length / limit),
       },
+      related,
     };
 
     // Cache the results for 5 minutes
@@ -118,19 +146,22 @@ class SearchService {
       candidateCount,
     );
 
-    // Build scored items array
-    const scored: { term: string; score: number }[] = [...trieSuggestions].map(
-      (term) => ({
-        term,
-        score: 0,
-      }),
-    );
+    // Build scored items array with deduplication
+    const seenTerms = new Set<string>();
+    const scored: { term: string; score: number }[] = [];
+
+    for (const term of trieSuggestions) {
+      const normalized = term.toLowerCase();
+      if (!seenTerms.has(normalized)) {
+        seenTerms.add(normalized);
+        scored.push({ term, score: 0 });
+      }
+    }
 
     popularSearches.forEach((popular) => {
-      const index = scored.findIndex((s) => s.term === popular.term);
-      if (index >= 0) {
-        scored[index].score += popular.count * 10;
-      } else {
+      const normalized = popular.term.toLowerCase();
+      if (!seenTerms.has(normalized)) {
+        seenTerms.add(normalized);
         scored.push({ term: popular.term, score: popular.count * 10 });
       }
     });

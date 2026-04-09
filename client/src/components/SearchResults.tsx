@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { Search, ArrowLeft, ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+import { Search, ArrowLeft, ChevronLeft, ChevronRight, Moon, Sun, BookOpen } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { SearchResult, PaginationInfo } from "../lib/api";
+import { SearchResult, PaginationInfo, SimilarDoc } from "../lib/api";
 import api from "../lib/api";
 import { useDarkMode } from "../hooks/useDarkMode";
 
@@ -16,6 +16,7 @@ interface SearchResultsProps {
   onPageChange?: (page: number) => void;
   correction?: string | null;
   responseTime?: number;
+  related?: SimilarDoc[];
 }
 
 export default function SearchResults({
@@ -28,6 +29,7 @@ export default function SearchResults({
   onPageChange,
   correction,
   responseTime = 0,
+  related = [],
 }: SearchResultsProps) {
   const { isDark, toggle: toggleDark } = useDarkMode();
   const [query, setQuery] = useState(initialQuery);
@@ -419,6 +421,60 @@ export default function SearchResults({
                 </button>
                 ?
               </p>
+            </motion.div>
+          )}
+
+          {/* Related documents section */}
+          {related && related.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 bg-[#F8F7F4] dark:bg-[#1A1D24] rounded-xl border border-[#E8E7E1] dark:border-[#2A2D35]"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <BookOpen className="w-4 h-4 text-[#3D5A4C] dark:text-[#6B8E7D]" />
+                <h3 
+                  className="text-sm font-medium text-[#3D5A4C] dark:text-[#6B8E7D]"
+                  style={{ fontFamily: "'Manrope', sans-serif" }}
+                >
+                  Related Documents
+                </h3>
+              </div>
+              <div className="space-y-2">
+                {related.map((doc, index) => (
+                  <motion.a
+                    key={doc.id}
+                    href={doc.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.05 }}
+                    className="flex items-start gap-3 p-3 rounded-lg hover:bg-[#FEFEFE] dark:hover:bg-[#2A2D35] transition-colors group"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <h4 
+                        className="text-sm font-medium text-[#2D3E50] dark:text-white group-hover:underline truncate"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        {doc.title}
+                      </h4>
+                      <p 
+                        className="text-xs text-[#9CA3AF] truncate mt-0.5"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        {doc.url}
+                      </p>
+                    </div>
+                    <span 
+                      className="text-xs text-[#9CA3AF] bg-[#E8E7E1] dark:bg-[#2A2D35] px-2 py-1 rounded"
+                      style={{ fontFamily: "'Manrope', sans-serif" }}
+                    >
+                      {(doc.similarityScore * 100).toFixed(0)}%
+                    </span>
+                  </motion.a>
+                ))}
+              </div>
             </motion.div>
           )}
           

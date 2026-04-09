@@ -5,7 +5,7 @@ import SearchInput from './SearchInput';
 import QuickActions from './QuickActions';
 import SearchFooter from './SearchFooter';
 import SearchResults from './SearchResults';
-import api, { SearchResult, PaginationInfo } from '../lib/api';
+import api, { SearchResult, PaginationInfo, SimilarDoc } from '../lib/api';
 import { addToHistory } from '../hooks/useSearchHistory';
 
 function Home() {
@@ -20,6 +20,7 @@ function Home() {
   const [loading, setLoading] = useState(false);
   const [correction, setCorrection] = useState<string | null>(null);
   const [responseTime, setResponseTime] = useState<number>(0);
+  const [related, setRelated] = useState<SimilarDoc[]>([]);
   const isInitialLoad = useRef(true);
 
   const handleSearch = async (query: string, updateUrl = true, page = 1) => {
@@ -32,6 +33,7 @@ function Home() {
       setPagination(response.pagination);
       setCorrection(response.correction || null);
       setResponseTime(response.responseTimeMs);
+      setRelated(response.related || []);
       
       if (updateUrl) {
         addToHistory(query);
@@ -42,6 +44,7 @@ function Home() {
       setSearchResults([]);
       setPagination(null);
       setResponseTime(0);
+      setRelated([]);
     } finally {
       setLoading(false);
       setShowResults(true);
@@ -77,11 +80,13 @@ function Home() {
       const response = await api.getRandom(10);
       setSearchResults(response.results);
       setPagination(response.pagination);
+      setRelated(response.related || []);
       setShowResults(true);
     } catch (error) {
       console.error('Random search failed:', error);
       setSearchResults([]);
       setPagination(null);
+      setRelated([]);
     } finally {
       setLoading(false);
     }
@@ -106,6 +111,7 @@ function Home() {
         onPageChange={handlePageChange}
         correction={correction}
         responseTime={responseTime}
+        related={related}
       />
     );
   }
