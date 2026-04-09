@@ -53,7 +53,8 @@ class SearchService {
     // Get related documents for the top 3 results
     const topResults = results.slice(0, 3);
     const topDocIds = topResults.map((r) => r.documentId);
-    const similarDocsMap = await similarityService.getSimiliarDocumentsForMany(topDocIds);
+    const similarDocsMap =
+      await similarityService.getSimiliarDocumentsForMany(topDocIds);
 
     // Aggregate and deduplicate related docs
     const relatedDocs: SimiliarDoc[] = [];

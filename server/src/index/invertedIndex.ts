@@ -230,6 +230,9 @@ class InvertedIndex {
     // Map: documentId -> { tf: total term frequency, matches: number of query terms matched }
     const docScores = new Map<string, { tf: number; matches: number }>();
 
+    // NOTE: Boost multiplier for exact matches
+    const exactMatchBoost = 10;
+
     // For each query term, find matching documents
     for (const term of queryTokens) {
       const matchingTerms = this.getTermsStartingWith(term);
@@ -256,9 +259,22 @@ class InvertedIndex {
     // Step 4: Convert to array and sort by score (descending)
     const results: SearchResult[] = [];
     for (const [docId, data] of docScores) {
+      // Checking for exact matches
+      let exactMatchBonus = 0;
+      for (const token of queryTokens) {
+        // Exact match only
+        const entry = this.index.get(token);
+
+        if (entry && entry.docIds.has(docId)) {
+          exactMatchBonus += exactMatchBoost;
+        }
+      }
+
+      // Exisiting logic
       results.push({
         documentId: docId,
-        score: data.tf, // Total term frequency as relevance score
+        // Total term frequency as relevance score
+        score: data.tf + exactMatchBonus, // Plus the boosted score
         termFrequency: data.tf,
       });
     }

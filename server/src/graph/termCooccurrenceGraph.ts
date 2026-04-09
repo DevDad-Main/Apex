@@ -121,7 +121,10 @@ class TermCooccurrenceGraph {
     const tokens = removeStopWords(tokenizer(query));
 
     // Skip expansion for short tokens (prevents "java" → "javascript")
-    const hasShortToken = tokens.some((t) => t.length < this.config.minQueryLength);
+    const hasShortToken = tokens.some(
+      (t) => t.length <= this.config.minQueryLength,
+    );
+
     if (hasShortToken) {
       return tokens;
     }

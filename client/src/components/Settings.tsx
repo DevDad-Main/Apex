@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
-import { ArrowLeft, History, Trash2, Database, Download, Moon, Sun, Shield } from 'lucide-react';
+import { ArrowLeft, History, Trash2, Database, Download, Moon, Sun, Shield, Highlighter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useDarkMode } from '../hooks/useDarkMode';
+import { useSearchHighlight } from '../hooks/useSearchHighlight';
 
 export default function Settings() {
   const { isDark, toggle } = useDarkMode();
+  const { highlightEnabled, toggle: toggleHighlight } = useSearchHighlight();
   const [searchHistoryEnabled, setSearchHistoryEnabled] = useState(true);
   const [safeSearchEnabled, setSafeSearchEnabled] = useState(true);
 
@@ -143,6 +145,38 @@ export default function Settings() {
                     <div 
                       className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
                         searchHistoryEnabled ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-5 bg-[#F8F7F4] dark:bg-[#1A1D24] rounded-xl">
+                  <div className="flex items-center gap-4">
+                    <Highlighter className="w-6 h-6 text-[#2D3E50] dark:text-white" />
+                    <div>
+                      <h3 
+                        className="text-[#2D3E50] dark:text-white font-medium"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Search Highlighting
+                      </h3>
+                      <p 
+                        className="text-[#6B7280] dark:text-[#9CA3AF] text-sm"
+                        style={{ fontFamily: "'Manrope', sans-serif" }}
+                      >
+                        Highlight matching terms in search results
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => toggleHighlight(!highlightEnabled)}
+                    className={`w-12 h-7 rounded-full transition-colors ${
+                      highlightEnabled ? 'bg-[#3D5A4C]' : 'bg-[#E8E7E1] dark:bg-[#2A2D35]'
+                    }`}
+                  >
+                    <div 
+                      className={`w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        highlightEnabled ? 'translate-x-6' : 'translate-x-1'
                       }`}
                     />
                   </button>

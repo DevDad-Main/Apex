@@ -5,6 +5,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { SearchResult, PaginationInfo, SimilarDoc } from "../lib/api";
 import api from "../lib/api";
 import { useDarkMode } from "../hooks/useDarkMode";
+import { useSearchHighlight } from "../hooks/useSearchHighlight";
+import { highlightText } from "../lib/utils";
 
 interface SearchResultsProps {
   initialQuery: string;
@@ -32,6 +34,7 @@ export default function SearchResults({
   related = [],
 }: SearchResultsProps) {
   const { isDark, toggle: toggleDark } = useDarkMode();
+  const { highlightEnabled } = useSearchHighlight();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -500,19 +503,29 @@ export default function SearchResults({
                 <h3
                   className="text-xl text-[#2D3E50] dark:text-white mb-2 
                              group-hover:underline
-                             transition-all duration-200"
+                             transition-all duration-200 [&_mark]:bg-yellow-200 [&_mark]:dark:bg-yellow-800 [&_mark]:text-inherit [&_mark]:px-0.5 [&_mark]:rounded"
                   style={{
                     fontFamily: "'Manrope', sans-serif",
                     fontWeight: 500,
                   }}
+                  {...(highlightEnabled && {
+                    dangerouslySetInnerHTML: {
+                      __html: highlightText(result.title || '', initialQuery),
+                    },
+                  })}
                 >
-                  {result.title}
+                  {!highlightEnabled && (result.title || '')}
                 </h3>
                 <p
-                  className="text-[#4B5563] dark:text-[#9CA3AF] leading-relaxed"
+                  className="text-[#4B5563] dark:text-[#9CA3AF] leading-relaxed [&_mark]:bg-yellow-200 [&_mark]:dark:bg-yellow-800 [&_mark]:text-inherit [&_mark]:px-0.5 [&_mark]:rounded"
                   style={{ fontFamily: "'Manrope', sans-serif" }}
+                  {...(highlightEnabled && {
+                    dangerouslySetInnerHTML: {
+                      __html: highlightText(generateSnippet(result.content, initialQuery), initialQuery),
+                    },
+                  })}
                 >
-                  {generateSnippet(result.content, initialQuery)}
+                  {!highlightEnabled && generateSnippet(result.content, initialQuery)}
                 </p>
               </motion.article>
             );

@@ -39,9 +39,9 @@ searchRouter.get(
 
     const responseTime = Number((performance.now() - startTime).toFixed(2));
 
-    logger.info(`Results found.. ${response.pagination.total}`, {
-      results: response.results,
-    });
+    // logger.info(`Results found.. ${response.pagination.total}`, {
+    //   results: response.results,
+    // });
 
     if (response.results.length === 0) {
       const correction = findClosestTerm(query as string);
