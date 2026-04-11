@@ -8,8 +8,9 @@ router.get(
   "/:docId",
   catchAsync(async (req, res, next) => {
     const { docId } = req.params;
+    const docIdStr = Array.isArray(docId) ? docId[0] : docId;
 
-    const similiar = await similarityService.getSimiliarDocuments(docId);
+    const similiar = await similarityService.getSimiliarDocuments(docIdStr);
 
     if (similiar.length === 0)
       return sendSuccess(res, {}, "No data found for this document", 404);

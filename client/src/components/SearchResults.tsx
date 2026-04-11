@@ -508,24 +508,22 @@ export default function SearchResults({
                     fontFamily: "'Manrope', sans-serif",
                     fontWeight: 500,
                   }}
-                  {...(highlightEnabled && {
-                    dangerouslySetInnerHTML: {
-                      __html: highlightText(result.title || '', initialQuery),
-                    },
-                  })}
                 >
-                  {!highlightEnabled && (result.title || '')}
+                  {highlightEnabled ? (
+                    <span dangerouslySetInnerHTML={{ __html: highlightText(result.title || '', initialQuery) }} />
+                  ) : (
+                    result.title || ''
+                  )}
                 </h3>
                 <p
                   className="text-[#4B5563] dark:text-[#9CA3AF] leading-relaxed [&_mark]:bg-yellow-200 [&_mark]:dark:bg-yellow-800 [&_mark]:text-inherit [&_mark]:px-0.5 [&_mark]:rounded"
                   style={{ fontFamily: "'Manrope', sans-serif" }}
-                  {...(highlightEnabled && {
-                    dangerouslySetInnerHTML: {
-                      __html: highlightText(generateSnippet(result.content, initialQuery), initialQuery),
-                    },
-                  })}
                 >
-                  {!highlightEnabled && generateSnippet(result.content, initialQuery)}
+                  {highlightEnabled ? (
+                    <span dangerouslySetInnerHTML={{ __html: highlightText(generateSnippet(result.content, initialQuery), initialQuery) }} />
+                  ) : (
+                    generateSnippet(result.content, initialQuery)
+                  )}
                 </p>
               </motion.article>
             );

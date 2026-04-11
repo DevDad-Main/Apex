@@ -40,7 +40,10 @@ const TOP_K = 10;
 
     // Build autocomplete Trie from all documents
     const allDocs = invertedIndex.getAllDocuments();
-    const docsArray = Array.from(allDocs.values());
+    const docsArray = Array.from(allDocs.values()).filter(
+      (doc): doc is { id: string; url: string; content: string; title: string } =>
+        typeof doc.title === "string",
+    );
 
     trie.buildFromDocuments(
       docsArray,

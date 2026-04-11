@@ -301,6 +301,8 @@ class InvertedIndex {
   //#region Scrape And Index
   async scrapeAndIndex(url: string): Promise<void> {
     const doc = await scrapeUrl(url);
+    if (!doc) return;
+
     this.addDocument({
       id: doc.id,
       url: doc.url,
