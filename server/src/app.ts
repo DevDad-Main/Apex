@@ -10,6 +10,9 @@ import compression from "compression";
 import hpp from "hpp";
 import helmet from "helmet";
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const helmetMiddleware = (helmet as unknown as { default?: typeof helmet }).default ?? helmet;
+
 const app = express();
 
 const allowedOrigins =
@@ -100,7 +103,7 @@ const xss = () => {
 app.use(compression());
 // Security headers to protect against common vulnerabilities
 app.use(
-  helmet({
+  helmetMiddleware({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"], // Only allow resources from same origin
