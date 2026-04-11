@@ -8,8 +8,7 @@ import autocompleteRouter from "./routes/trie.routes.js";
 import similair from "./routes/similair.routes.js";
 import compression from "compression";
 import hpp from "hpp";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const helmet = require("helmet");
+import helmet from "helmet";
 
 const app = express();
 
