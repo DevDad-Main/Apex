@@ -8,10 +8,8 @@ import autocompleteRouter from "./routes/trie.routes.js";
 import similair from "./routes/similair.routes.js";
 import compression from "compression";
 import hpp from "hpp";
-import helmet from "helmet";
-
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const helmetMiddleware = (helmet as unknown as { default?: typeof helmet }).default ?? helmet;
+const helmet = require("helmet");
 
 const app = express();
 
@@ -103,7 +101,7 @@ const xss = () => {
 app.use(compression());
 // Security headers to protect against common vulnerabilities
 app.use(
-  helmetMiddleware({
+  helmet({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"], // Only allow resources from same origin
