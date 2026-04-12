@@ -25,7 +25,9 @@ let docsArray: any = [];
   try {
     // Load documents from PostgreSQL
     const docs = await loadDocumentsFromCloud();
-    logger.info(`Loading ${docs.length} documents into search index...`);
+    // logger.info(`Loading ${docs.length} documents into search index...`);
+
+    logger.info(`USE_PG_SEARCH value: ${USE_PG_SEARCH}`);
 
     if (USE_PG_SEARCH) {
       // Don't add to invertedIndex  - Skip it entirely
