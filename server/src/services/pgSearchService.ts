@@ -23,12 +23,20 @@ interface DocumentInput {
   documentId: string;
 }
 
+interface SearchResult {
+  id: string;
+  url: string;
+  title: string;
+  content: string;
+  rank: number;
+}
+
 class PGSearchService {
   async search(query: string, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
     // the main search with tsvector ranking
-    const docs: Document[] = await prisma.$queryRawUnsafe(
+    const docs: SearchResult[] = await prisma.$queryRawUnsafe(
       docsUnsafeQuery,
       query,
       limit,

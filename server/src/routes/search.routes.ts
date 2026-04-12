@@ -1,11 +1,6 @@
 import { findClosestTerm } from "../utils/levenshtein.utils.js";
 import { searchService } from "../services/searchService.js";
-import {
-  catchAsync,
-  logger,
-  sendError,
-  sendSuccess,
-} from "devdad-express-utils";
+import { catchAsync, sendError, sendSuccess } from "devdad-express-utils";
 import { Router } from "express";
 import { searchHistoryService } from "../services/searchHistory.js";
 import { pgSearchService } from "../services/pgSearchService.js";
@@ -52,7 +47,7 @@ searchRouter.get(
 
     // OLD code
     // if (response.results.length === 0) {
-    if (response.length === 0) {
+    if (response.results.length === 0) {
       const correction = findClosestTerm(query as string);
       return sendSuccess(
         res,
