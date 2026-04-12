@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.4.0",
   "engineVersion": "ab56fe763f921d033a6c195e7ddeb3e255bdbb57",
   "activeProvider": "postgresql",
-  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Document {\n  id        String   @id @default(cuid())\n  title     String\n  content   String\n  url       String   @unique\n  scrapedAt DateTime @default(now())\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@index([url])\n}\n",
+  "inlineSchema": "generator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\nmodel Document {\n  id            String                   @id @default(cuid())\n  title         String\n  content       String\n  // PostgreSQL full-text index\n  contentVector Unsupported(\"tsvector\")?\n  url           String                   @unique\n  scrapedAt     DateTime                 @default(now())\n  createdAt     DateTime                 @default(now())\n  updatedAt     DateTime                 @updatedAt\n\n  @@index([url])\n  @@index([contentVector])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},

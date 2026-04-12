@@ -18,6 +18,8 @@ logger.info("Connected to PostgreSQL");
 
 const PORT = process.env.PORT || 8000;
 const TOP_K = 10;
+const USE_PG_SEARCH = process.env.USE_PG_SEARCH === "true";
+let docsArray: any = [];
 
 (async () => {
   try {
@@ -25,37 +27,61 @@ const TOP_K = 10;
     const docs = await loadDocumentsFromCloud();
     logger.info(`Loading ${docs.length} documents into search index...`);
 
-    // Add each document to the inverted index
-    for (const doc of docs) {
-      invertedIndex.addDocument({
-        id: doc.id,
-        url: doc.url,
-        title: doc.title,
-        content: doc.content,
-      });
+    if (USE_PG_SEARCH) {
+      // Don't add to invertedIndex  - Skip it entirely
+      // Just use for trie + graph building.
+      docsArray = docs
+        .map((doc) => ({
+          id: doc.id,
+          url: doc.url,
+          title: doc.title,
+          content: doc.content,
+        }))
+        .filter((doc) => typeof doc.title === "string");
+
+      trie.buildFromDocuments(
+        docsArray,
+        (text: string) => tokenizer(text),
+        extractPhrases,
+      );
+
+      termCooccurrenceGraph.buildFromDocuments(docsArray);
+    } else {
+      // Add each document to the inverted index
+      for (const doc of docs) {
+        invertedIndex.addDocument({
+          id: doc.id,
+          url: doc.url,
+          title: doc.title,
+          content: doc.content,
+        });
+      }
+
+      // Rebuild sorted terms for binary search
+      invertedIndex.rebuildSortedTerms();
+
+      // Build autocomplete Trie from all documents
+      const allDocs = invertedIndex.getAllDocuments();
+
+      docsArray = Array.from(allDocs.values()).filter(
+        (
+          doc,
+        ): doc is { id: string; url: string; content: string; title: string } =>
+          typeof doc.title === "string",
+      );
+
+      trie.buildFromDocuments(
+        docsArray,
+        (text: string) => tokenizer(text),
+        extractPhrases,
+      );
+
+      // NOTE: Initialize Graph
+      termCooccurrenceGraph.buildFromDocuments(docsArray);
+
+      logger.info(`Built term co-occurrence graph`);
+      logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
     }
-
-    // Rebuild sorted terms for binary search
-    invertedIndex.rebuildSortedTerms();
-
-    // Build autocomplete Trie from all documents
-    const allDocs = invertedIndex.getAllDocuments();
-    const docsArray = Array.from(allDocs.values()).filter(
-      (doc): doc is { id: string; url: string; content: string; title: string } =>
-        typeof doc.title === "string",
-    );
-
-    trie.buildFromDocuments(
-      docsArray,
-      (text: string) => tokenizer(text),
-      extractPhrases,
-    );
-
-    // NOTE: Initialize Graph
-    termCooccurrenceGraph.buildFromDocuments(docsArray);
-    logger.info(`Built term co-occurrence graph`);
-
-    logger.info(`Built autocomplete trie with ${docsArray.length} documents`);
 
     // Check if similarity data already exists in Redis
     const client = await initializeRedisClient();

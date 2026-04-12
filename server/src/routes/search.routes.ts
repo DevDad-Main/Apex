@@ -8,6 +8,7 @@ import {
 } from "devdad-express-utils";
 import { Router } from "express";
 import { searchHistoryService } from "../services/searchHistory.js";
+import { pgSearchService } from "../services/pgSearchService.js";
 
 const searchRouter = Router();
 
@@ -31,7 +32,13 @@ searchRouter.get(
     const pageNum = page ? parseInt(page as string, 10) : 1;
     const limitNum = limit ? parseInt(limit as string, 10) : 10;
 
-    const response = await searchService.search(
+    // const response = await searchService.search(
+    //   query as string,
+    //   pageNum,
+    //   limitNum,
+    // );
+
+    const response = await pgSearchService.search(
       query as string,
       pageNum,
       limitNum,
@@ -43,7 +50,9 @@ searchRouter.get(
     //   results: response.results,
     // });
 
-    if (response.results.length === 0) {
+    // OLD code
+    // if (response.results.length === 0) {
+    if (response.length === 0) {
       const correction = findClosestTerm(query as string);
       return sendSuccess(
         res,

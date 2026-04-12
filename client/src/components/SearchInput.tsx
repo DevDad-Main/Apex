@@ -1,15 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Search, X, Clock, Trash2 } from 'lucide-react';
-import api from '../lib/api';
-import { getSearchHistory, removeFromHistory, clearSearchHistory, SearchHistoryItem } from '../hooks/useSearchHistory';
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Search, X, Clock, Trash2 } from "lucide-react";
+import api from "../lib/api";
+import {
+  getSearchHistory,
+  removeFromHistory,
+  clearSearchHistory,
+  SearchHistoryItem,
+} from "../hooks/useSearchHistory";
 
 interface SearchInputProps {
   onSearch: (query: string) => void;
 }
 
 export default function SearchInput({ onSearch }: SearchInputProps) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -21,7 +26,8 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Show suggestions when there's a query or history, regardless of focus
-  const shouldShowSuggestions = showSuggestions || isFocused || query.length > 0;
+  const shouldShowSuggestions =
+    showSuggestions || isFocused || query.length > 0;
 
   // Handle container click to show suggestions
   const handleContainerClick = () => {
@@ -61,9 +67,12 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
       debounceRef.current = setTimeout(async () => {
         try {
           abortControllerRef.current = new AbortController();
-          console.log('Fetching autocomplete for:', query);
-          const results = await api.autocomplete(query.toLowerCase(), abortControllerRef.current.signal);
-          console.log('Got results:', results.length);
+          console.log("Fetching autocomplete for:", query);
+          const results = await api.autocomplete(
+            query.toLowerCase(),
+            abortControllerRef.current.signal,
+          );
+          console.log("Got results:", results);
           // Only show suggestions if we got results and query still matches
           if (results.length > 0) {
             setSuggestions(results);
@@ -72,10 +81,10 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             setSuggestions([]);
           }
         } catch (error: unknown) {
-          if (error instanceof Error && error.name === 'AbortError') {
+          if (error instanceof Error && error.name === "AbortError") {
             return;
           }
-          console.error('Autocomplete failed:', error);
+          console.error("Autocomplete failed:", error);
           setSuggestions([]);
         } finally {
           setLoadingSuggestions(false);
@@ -108,18 +117,18 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     const activeList = query.length > 0 ? suggestions : history.slice(0, 5);
     if (activeList.length === 0) return;
 
-    if (e.key === 'ArrowDown') {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSelectedIndex(prev => 
-        prev < activeList.length - 1 ? prev + 1 : prev
+      setSelectedIndex((prev) =>
+        prev < activeList.length - 1 ? prev + 1 : prev,
       );
-    } else if (e.key === 'ArrowUp') {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
-      setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
-    } else if (e.key === 'Enter' && selectedIndex >= 0) {
+      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
+    } else if (e.key === "Enter" && selectedIndex >= 0) {
       e.preventDefault();
       const item = activeList[selectedIndex];
-      const searchQuery = typeof item === 'string' ? item : item.query;
+      const searchQuery = typeof item === "string" ? item : item.query;
       setQuery(searchQuery);
       setShowSuggestions(false);
       onSearch(searchQuery.toLowerCase());
@@ -152,7 +161,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1, ease: 'easeOut' }}
+      transition={{ duration: 0.3, delay: 0.1, ease: "easeOut" }}
       className="relative w-full max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="relative">
@@ -160,7 +169,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
           animate={{
             scale: isFocused ? 1.02 : 1,
           }}
-          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
           className="relative"
         >
           <input
@@ -170,7 +179,9 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
-              setShowSuggestions(e.target.value.length > 0 || history.length > 0);
+              setShowSuggestions(
+                e.target.value.length > 0 || history.length > 0,
+              );
               setSelectedIndex(-1);
             }}
             onFocus={() => {
@@ -185,7 +196,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
               setIsFocused(false);
               // Delay hiding to allow click events to register
               setTimeout(() => {
-                if (!inputRef.current?.matches(':focus-within')) {
+                if (!inputRef.current?.matches(":focus-within")) {
                   setShowSuggestions(false);
                 }
               }, 300);
@@ -202,14 +213,15 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
               outline-none
               transition-all duration-200
               breathe-animation
-              ${isFocused 
-                ? 'shadow-[0_1px_3px_rgba(0,0,0,0.05),0_8px_20px_rgba(45,62,80,0.15)]' 
-                : 'shadow-[0_1px_3px_rgba(0,0,0,0.05),0_4px_12px_rgba(45,62,80,0.08)]'
+              ${
+                isFocused
+                  ? "shadow-[0_1px_3px_rgba(0,0,0,0.05),0_8px_20px_rgba(45,62,80,0.15)]"
+                  : "shadow-[0_1px_3px_rgba(0,0,0,0.05),0_4px_12px_rgba(45,62,80,0.08)]"
               }
             `}
             style={{ fontFamily: "'Manrope', sans-serif" }}
           />
-          
+
           <motion.button
             type="submit"
             className="absolute right-3 top-1/2 -translate-y-1/2
@@ -229,7 +241,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
             className="absolute top-[calc(100%+8px)] left-0 right-0
                      bg-[#FEFEFE] dark:bg-[#1A1D24] rounded-2xl
                      shadow-[0_4px_20px_rgba(45,62,80,0.12)]
@@ -254,15 +266,16 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                         w-full px-7 py-4 text-left
                         text-[#2D3E50] dark:text-white text-base
                         transition-colors duration-150
-                        ${selectedIndex === index 
-                          ? 'bg-[#F5F5F3] dark:bg-[#2A2D35]' 
-                          : 'hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]'
+                        ${
+                          selectedIndex === index
+                            ? "bg-[#F5F5F3] dark:bg-[#2A2D35]"
+                            : "hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]"
                         }
-                        ${index !== 0 ? 'border-t border-[#F0EFE9] dark:border-[#2A2D35]' : ''}
+                        ${index !== 0 ? "border-t border-[#F0EFE9] dark:border-[#2A2D35]" : ""}
                       `}
                       style={{ fontFamily: "'Manrope', sans-serif" }}
                     >
-                      <Search className="w-4 h-4 inline mr-3 opacity-40" />
+                      <Search className="inline w-4 h-4 mr-3 opacity-40" />
                       {suggestion}
                     </button>
                   ))
@@ -274,16 +287,19 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
             {query.length === 0 && history.length > 0 && (
               <>
                 <div className="flex items-center justify-between px-7 py-3 border-b border-[#F0EFE9] dark:border-[#2A2D35]">
-                  <span className="text-xs text-[#9CA3AF] uppercase tracking-wide" style={{ fontFamily: "'Manrope', sans-serif" }}>
+                  <span
+                    className="text-xs text-[#9CA3AF] uppercase tracking-wide"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
                     Recent searches
                   </span>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={handleClearHistory}
-                      className="text-xs text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#2D3E50] dark:hover:text-white transition-colors"
-                      style={{ fontFamily: "'Manrope', sans-serif" }}
-                    >
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={handleClearHistory}
+                    className="text-xs text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#2D3E50] dark:hover:text-white transition-colors"
+                    style={{ fontFamily: "'Manrope', sans-serif" }}
+                  >
                     Clear all
                   </button>
                 </div>
@@ -295,7 +311,7 @@ export default function SearchInput({ onSearch }: SearchInputProps) {
                       text-[#2D3E50] dark:text-white text-base
                       hover:bg-[#F8F7F4] dark:hover:bg-[#2A2D35]
                       transition-colors duration-150 cursor-pointer
-                      ${index !== 0 ? 'border-t border-[#F0EFE9] dark:border-[#2A2D35]' : ''}
+                      ${index !== 0 ? "border-t border-[#F0EFE9] dark:border-[#2A2D35]" : ""}
                     `}
                     style={{ fontFamily: "'Manrope', sans-serif" }}
                     onMouseDown={(e) => e.preventDefault()}
