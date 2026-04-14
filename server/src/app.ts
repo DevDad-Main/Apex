@@ -100,7 +100,7 @@ const xss = () => {
 app.use(compression());
 // Security headers to protect against common vulnerabilities
 app.use(
-  helmet({
+  (helmet as any)({
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"], // Only allow resources from same origin
